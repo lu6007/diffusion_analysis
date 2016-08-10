@@ -2,6 +2,11 @@
 % uses solution from previous steps as initial guess for later iterations
 % Created by Yiwen Shi, 07/2016, UCSD
 
+% tensor_diffusion: 99 steps, [4.9987, 93.1667, 5.1059]
+% spot_diffusion: 8 steps, [28.9978, 5, 5, 5, 5]
+% layered_diffusion: 5 steps, [5, 19.9974]
+
+
 function d = opt_loop(data, tol, cell_name)
 
     load(data);

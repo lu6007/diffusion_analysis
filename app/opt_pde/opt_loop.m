@@ -5,6 +5,14 @@
 function d = opt_loop(data, tol, cell_name)
 
     load(data);
+
+    if strcmp(cell_name, 'tensor_cross_2')
+        tri(4, tri(4, :) == 3) = 2;
+        tri(4, tri(4, :) == 4) = 3;
+        tri(4, tri(4, :) == 5) = 3;
+        tri(4, tri(4, :) == 6) = 4;
+        num_para = size(unique(tri(4, :)), 2);
+    end
     
     d0 = ones(num_para, 1);
     d = ones(num_para, 1) * 10;

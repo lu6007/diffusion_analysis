@@ -37,84 +37,90 @@ function [u,d, s_hist, err_hist, linerr_hist] = opt3(u0, u1, u2, d0, dt, num_nod
     
     % Diffusion coefficient for each node
     coef_1 = {'layered_diffusion','spot_diffusion'};
-    coef_3 = {'tensor_diffusion','tensor_cross'};
-    
-    path = '/Users/Yiwen/Desktop/for_yiwen/diffusion_data/diffusion/simulation/';
-    orientation_file = strcat(path, cell_name, '/output/orientation.mat');
-    ori = load(orientation_file);
-    x   = ori.x; 
-    y   = ori.y;
-    clear ori;
+    coef_3 = {'tensor_diffusion','tensor_cross','tensor_cross_2'};
 
-    num_lines = numel(x)/2;
-    D = cell(num_lines,1); % diffusion tensor matrix
-    for i = 1 : num_lines
-        a(i) = x(2*i) - x(2*i-1);
-        b(i) = y(2*i) - y(2*i-1);
-        % Normalizing
-        temp = sqrt(a(i)^2 + b(i)^2);
-        a(i) = a(i) / temp; 
-        b(i) = b(i) / temp; 
-        clear temp;
-        % Calculate the diffusion tensor with the transforming matrix T
-        TT{i} = [ a(i) b(i);...
-                 -b(i) a(i)]';
+    % load orientation data
+    if sum(ismember(coef_3, cell_name)) > 0
+
+        path = '/Users/Yiwen/Desktop/for_yiwen/diffusion_data/diffusion/simulation/';
+        orientation_file = strcat(path, cell_name, '/output/orientation.mat');
+        ori = load(orientation_file);
+        x   = ori.x; 
+        y   = ori.y;
+        clear ori;
+
+        num_lines = numel(x)/2;
+        D = cell(num_lines,1); % diffusion tensor matrix
+        for i = 1 : num_lines
+            a(i) = x(2*i) - x(2*i-1);
+            b(i) = y(2*i) - y(2*i-1);
+            % Normalizing
+            temp = sqrt(a(i)^2 + b(i)^2);
+            a(i) = a(i) / temp; 
+            b(i) = b(i) / temp; 
+            clear temp;
+            % Calculate the diffusion tensor with the transforming matrix T
+            TT{i} = [ a(i) b(i);...
+                     -b(i) a(i)]';
+        end
+
     end
 
     % Stiffness and mass matrix for different subregion
+    [A_sub, M_sub, diff_coef] = cal_diff_coef(cell_name, num_nodes, num_para, d, TT, tri, num_lines, p);
 
-    if sum(ismember(coef_1, cell_name)) > 0
-        diff_coef = ones(1, num_nodes);
-        for i = 1 : num_para
-            idx_tmp = (tri(4, :) == i); 
-            tri_tmp = tri(:, idx_tmp);
-            diff_coef(idx_tmp) = d(i);
-            [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
-            A_sub{i} = A_tmp;
-            M_sub{i} = M_tmp;
-        end
-    elseif sum(ismember(coef_3, cell_name)) > 0
+    % if sum(ismember(coef_1, cell_name)) > 0
+    %     diff_coef = ones(1, num_nodes);
+    %     for i = 1 : num_para
+    %         idx_tmp = (tri(4, :) == i); 
+    %         tri_tmp = tri(:, idx_tmp);
+    %         diff_coef(idx_tmp) = d(i);
+    %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
+    %         A_sub{i} = A_tmp;
+    %         M_sub{i} = M_tmp;
+    %     end
+    % elseif sum(ismember(coef_3, cell_name)) > 0
 
-        diff_coef  = ones(3, num_nodes);
-        diff_const = d;
+    %     diff_coef  = ones(3, num_nodes);
+    %     diff_const = d;
         
-        for i = 1:num_lines,
-            T = TT{i};
-            D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; 
-        end
+    %     for i = 1:num_lines,
+    %         T = TT{i};
+    %         D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; 
+    %     end
 
-        % diff_coef = zeros(num_tris,3);
-        D = {[reshape(D{1},4,1)];...
-             [reshape(D{2},4,1)]};
-        cartesian_diff_const = {[diff_const(1),0,diff_const(1)];...
-                                [D{1}(1),D{1}(2),D{1}(4)];...
-                                [D{2}(1),D{2}(2),D{2}(4)]};
+    %     % diff_coef = zeros(num_tris,3);
+    %     D = {[reshape(D{1},4,1)];...
+    %          [reshape(D{2},4,1)]};
+    %     cartesian_diff_const = {[diff_const(1),0,diff_const(1)];...
+    %                             [D{1}(1),D{1}(2),D{1}(4)];...
+    %                             [D{2}(1),D{2}(2),D{2}(4)]};
 
-        for i = 1:3
-            diff_coef(i, tri(4,:)==1)=cartesian_diff_const{1}(i); % the rest of the cell
-            diff_coef(i, tri(4,:)==2)=cartesian_diff_const{2}(i); % upper filament
-            diff_coef(i, tri(4,:)==3)=cartesian_diff_const{3}(i); % lower filament
-        end
+    %     for i = 1:3
+    %         diff_coef(i, tri(4,:)==1)=cartesian_diff_const{1}(i); % the rest of the cell
+    %         diff_coef(i, tri(4,:)==2)=cartesian_diff_const{2}(i); % upper filament
+    %         diff_coef(i, tri(4,:)==3)=cartesian_diff_const{3}(i); % lower filament
+    %     end
 
-        for i = 1 : num_para
-            idx_tmp = (tri(4, :) == i); 
-            tri_tmp = tri(:, idx_tmp);
-            [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(:, idx_tmp));
-            A_sub{i} = A_tmp;
-            M_sub{i} = M_tmp;
-        end
+    %     for i = 1 : num_para
+    %         idx_tmp = (tri(4, :) == i); 
+    %         tri_tmp = tri(:, idx_tmp);
+    %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(:, idx_tmp));
+    %         A_sub{i} = A_tmp;
+    %         M_sub{i} = M_tmp;
+    %     end
 
-    else
-        diff_coef = ones(1, num_nodes);
-        for i = 1 : num_para
-            idx_tmp = (tri(4, :) == i); 
-            tri_tmp = tri(:, idx_tmp);
-            diff_coef(idx_tmp) = d(i);
-            [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
-            A_sub{i} = A_tmp;
-            M_sub{i} = M_tmp;
-        end
-    end
+    % else
+    %     diff_coef = ones(1, num_nodes);
+    %     for i = 1 : num_para
+    %         idx_tmp = (tri(4, :) == i); 
+    %         tri_tmp = tri(:, idx_tmp);
+    %         diff_coef(idx_tmp) = d(i);
+    %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
+    %         A_sub{i} = A_tmp;
+    %         M_sub{i} = M_tmp;
+    %     end
+    % end
 
     % A -- stiffness matris; M -- mass matrix
     [A, M] = assemble_matrix(p, tri, 'diff_coef', diff_coef);
@@ -137,54 +143,56 @@ function [u,d, s_hist, err_hist, linerr_hist] = opt3(u0, u1, u2, d0, dt, num_nod
         % Set up for subregions 
         diff_coef = ones(1, num_nodes);
 
-        if sum(ismember(coef_1, cell_name)) > 0
-            for i = 1 : num_para
-                idx_tmp = (tri(4, :) == i); 
-                tri_tmp = tri(:, idx_tmp);
-                diff_coef(idx_tmp) = d(i);
-                [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
-                A_sub{i} = A_tmp;
-                M_sub{i} = M_tmp;
-            end
-        elseif sum(ismember(coef_3, cell_name)) > 0
+        [A_sub, M_sub, diff_coef] = cal_diff_coef(cell_name, num_nodes, num_para, d, TT, tri, num_lines, p);
 
-            diff_coef = ones(3, num_nodes);
-            diff_const = d;
+        % if sum(ismember(coef_1, cell_name)) > 0
+        %     for i = 1 : num_para
+        %         idx_tmp = (tri(4, :) == i); 
+        %         tri_tmp = tri(:, idx_tmp);
+        %         diff_coef(idx_tmp) = d(i);
+        %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
+        %         A_sub{i} = A_tmp;
+        %         M_sub{i} = M_tmp;
+        %     end
+        % elseif sum(ismember(coef_3, cell_name)) > 0
 
-            for i = 1:num_lines,
-                T = TT{i};
-                D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; 
-            end
+        %     diff_coef = ones(3, num_nodes);
+        %     diff_const = d;
 
-            D = {[reshape(D{1},4,1)];[reshape(D{2},4,1)]};
-            cartesian_diff_const = {[diff_const(1),0,diff_const(1)];...
-                                    [D{1}(1),D{1}(2),D{1}(4)];...
-                                    [D{2}(1),D{2}(2),D{2}(4)]};
+        %     for i = 1:num_lines,
+        %         T = TT{i};
+        %         D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; 
+        %     end
 
-            for i = 1:3
-                diff_coef(i, tri(4,:)==1)=cartesian_diff_const{1}(i); % the rest of the cell
-                diff_coef(i, tri(4,:)==2)=cartesian_diff_const{2}(i); % upper filament
-                diff_coef(i, tri(4,:)==3)=cartesian_diff_const{3}(i); % lower filament
-            end
+        %     D = {[reshape(D{1},4,1)];[reshape(D{2},4,1)]};
+        %     cartesian_diff_const = {[diff_const(1),0,diff_const(1)];...
+        %                             [D{1}(1),D{1}(2),D{1}(4)];...
+        %                             [D{2}(1),D{2}(2),D{2}(4)]};
 
-            for i = 1 : num_para
-                idx_tmp = (tri(4, :) == i); 
-                tri_tmp = tri(:, idx_tmp);
-                [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(:, idx_tmp));
-                A_sub{i} = A_tmp;
-                M_sub{i} = M_tmp;
-            end
+        %     for i = 1:3
+        %         diff_coef(i, tri(4,:)==1)=cartesian_diff_const{1}(i); % the rest of the cell
+        %         diff_coef(i, tri(4,:)==2)=cartesian_diff_const{2}(i); % upper filament
+        %         diff_coef(i, tri(4,:)==3)=cartesian_diff_const{3}(i); % lower filament
+        %     end
 
-        else
-            for i = 1 : num_para
-                idx_tmp = (tri(4, :) == i); 
-                tri_tmp = tri(:, idx_tmp);
-                diff_coef(idx_tmp) = d(i);
-                [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
-                A_sub{i} = A_tmp;
-                M_sub{i} = M_tmp;
-            end
-        end
+        %     for i = 1 : num_para
+        %         idx_tmp = (tri(4, :) == i); 
+        %         tri_tmp = tri(:, idx_tmp);
+        %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(:, idx_tmp));
+        %         A_sub{i} = A_tmp;
+        %         M_sub{i} = M_tmp;
+        %     end
+
+        % else
+        %     for i = 1 : num_para
+        %         idx_tmp = (tri(4, :) == i); 
+        %         tri_tmp = tri(:, idx_tmp);
+        %         diff_coef(idx_tmp) = d(i);
+        %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
+        %         A_sub{i} = A_tmp;
+        %         M_sub{i} = M_tmp;
+        %     end
+        % end
 
 
         % calculate stiffness matrix and mass matrix according current settings
@@ -262,57 +270,59 @@ function [u,d, s_hist, err_hist, linerr_hist] = opt3(u0, u1, u2, d0, dt, num_nod
             d_tmp = d + rp_52 * dd;
             u_tmp = u + rp_52 * du;
             v_tmp = v + rp_52 * dv;
+
+            [A_sub, M_sub, diff_coef] = cal_diff_coef(cell_name, num_nodes, num_para, d, TT, tri, num_lines, p);
             
-            if sum(ismember(coef_1, cell_name)) > 0
-                for i = 1 : num_para
-                    idx_tmp = (tri(4, :) == i); 
-                    tri_tmp = tri(:, idx_tmp);
-                    diff_coef(idx_tmp) = d(i);
-                    [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
-                    A_sub{i} = A_tmp;
-                    M_sub{i} = M_tmp;
-                end
-            elseif sum(ismember(coef_3, cell_name)) > 0
+            % if sum(ismember(coef_1, cell_name)) > 0
+            %     for i = 1 : num_para
+            %         idx_tmp = (tri(4, :) == i); 
+            %         tri_tmp = tri(:, idx_tmp);
+            %         diff_coef(idx_tmp) = d(i);
+            %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
+            %         A_sub{i} = A_tmp;
+            %         M_sub{i} = M_tmp;
+            %     end
+            % elseif sum(ismember(coef_3, cell_name)) > 0
 
 
-                diff_coef  = ones(3, num_nodes);
-                diff_const = d;
+            %     diff_coef  = ones(3, num_nodes);
+            %     diff_const = d;
 
-                for i = 1:num_lines
-                    T = TT{i};
-                    D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; % D{i} is symmetric
-                end
+            %     for i = 1:num_lines
+            %         T = TT{i};
+            %         D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; % D{i} is symmetric
+            %     end
 
-                % diff_coef = zeros(num_tris,3);
-                D = {[reshape(D{1},4,1)];[reshape(D{2},4,1)]};
-                cartesian_diff_const = {[diff_const(1),0,diff_const(1)];...
-                                        [D{1}(1),D{1}(2),D{1}(4)];...
-                                        [D{2}(1),D{2}(2),D{2}(4)]};
+            %     % diff_coef = zeros(num_tris,3);
+            %     D = {[reshape(D{1},4,1)];[reshape(D{2},4,1)]};
+            %     cartesian_diff_const = {[diff_const(1),0,diff_const(1)];...
+            %                             [D{1}(1),D{1}(2),D{1}(4)];...
+            %                             [D{2}(1),D{2}(2),D{2}(4)]};
 
-                for i = 1:3
-                    diff_coef(i, tri(4,:)==1)=cartesian_diff_const{1}(i); % the rest of the cell
-                    diff_coef(i, tri(4,:)==2)=cartesian_diff_const{2}(i); % upper filament
-                    diff_coef(i, tri(4,:)==3)=cartesian_diff_const{3}(i); % lower filament
-                end
+            %     for i = 1:3
+            %         diff_coef(i, tri(4,:)==1)=cartesian_diff_const{1}(i); % the rest of the cell
+            %         diff_coef(i, tri(4,:)==2)=cartesian_diff_const{2}(i); % upper filament
+            %         diff_coef(i, tri(4,:)==3)=cartesian_diff_const{3}(i); % lower filament
+            %     end
 
-                for i = 1 : num_para
-                    idx_tmp = (tri(4, :) == i); 
-                    tri_tmp = tri(:, idx_tmp);
-                    [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(:, idx_tmp));
-                    A_sub{i} = A_tmp;
-                    M_sub{i} = M_tmp;
-                end
+            %     for i = 1 : num_para
+            %         idx_tmp = (tri(4, :) == i); 
+            %         tri_tmp = tri(:, idx_tmp);
+            %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(:, idx_tmp));
+            %         A_sub{i} = A_tmp;
+            %         M_sub{i} = M_tmp;
+            %     end
 
-            else
-                for i = 1 : num_para
-                    idx_tmp = (tri(4, :) == i); 
-                    tri_tmp = tri(:, idx_tmp);
-                    diff_coef(idx_tmp) = d(i);
-                    [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
-                    A_sub{i} = A_tmp;
-                    M_sub{i} = M_tmp;
-                end
-            end
+            % else
+            %     for i = 1 : num_para
+            %         idx_tmp = (tri(4, :) == i); 
+            %         tri_tmp = tri(:, idx_tmp);
+            %         diff_coef(idx_tmp) = d(i);
+            %         [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
+            %         A_sub{i} = A_tmp;
+            %         M_sub{i} = M_tmp;
+            %     end
+            % end
 
 
             [A, M] = assemble_matrix(p, tri, 'diff_coef', diff_coef);

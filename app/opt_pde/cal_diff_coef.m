@@ -9,19 +9,19 @@ function [A_sub, M_sub, diff_coef] = cal_diff_coef(cell_name, num_nodes, num_par
     % Stiffness and mass matrix for different subregion
 
     if sum(ismember(coef_1, cell_name)) > 0
-        % diff_coef = ones(1, num_nodes);
-        % for i = 1 : num_para
-        %     idx_tmp = (tri(4, :) == i);
-        %     tri_tmp = tri(:, idx_tmp);
-        %     diff_coef(idx_tmp) = d(i);
-        %     [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
-        %     A_sub{i} = A_tmp;
-        %     M_sub{i} = M_tmp;
-        % end
+        diff_coef = ones(1, num_nodes);
+        for i = 1 : num_para
+            idx_tmp = (tri(4, :) == i);
+            tri_tmp = tri(:, idx_tmp);
+            diff_coef(idx_tmp) = d(i);
+            [A_tmp, M_tmp] = assemble_matrix(p, tri_tmp, 'diff_coef', diff_coef(idx_tmp));
+            A_sub{i} = A_tmp;
+            M_sub{i} = M_tmp;
+        end
 				%----------------------
-				i = 1;
-				diff_coef = d;
-				[A_sub{i}, M_sub{i}] = assemble_matrix(p, tri, 'diff_coef', diff_coef);
+				% i = 1;
+				% diff_coef = d;
+				% [A_sub{i}, M_sub{i}] = assemble_matrix(p, tri, 'diff_coef', diff_coef);
 				%----------------------
     elseif sum(ismember(coef_3, cell_name)) > 0
 

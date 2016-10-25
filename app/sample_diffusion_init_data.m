@@ -4,10 +4,10 @@
 % Copyright: Shaoying Lu and Yingxiao Wang 2014
 function data = sample_diffusion_init_data(cell_name)
     % root = 'D:/sof/data/diffusion_sample/';
-    root = '/YOUR_PATH/diffusion/data/diffusion_sample/';
+    root = '/Users/Yiwen/Desktop/for_yiwen/diffusion_data/diffusion/';
     data.cell_name = cell_name;
     switch cell_name
-        case 'mem17', % the best Lyn-Src cell 
+        case 'mem17', % the best Lyn-Src cell
             data.path = strcat(root, 'frap/mem17/');
             data.output_path = strcat(data.path, 'output/');
             data.first_file = 'mem171.016';
@@ -32,7 +32,7 @@ function data = sample_diffusion_init_data(cell_name)
             data.starting_step = 0;
             data.magification = 40;
             data.dt = 30; %sec
-            data.diff_coef = 0.1126*2.34*2.34;   
+            data.diff_coef = 0.1126*2.34*2.34;
             data.subtract_background = 1;
             data.crop_image = 0;
             data.median_filter = 1;
@@ -51,7 +51,7 @@ function data = sample_diffusion_init_data(cell_name)
             % dt is not needed for computer simulation,
             % but it is needed for compute recovery curve and
             % estimate the diffusion coefficient from the simulation
-            data.dt = 0.0156; 
+            data.dt = 0.0156;
 
         case 'layered_diffusion',
             data.path = strcat(root,'simulation/layered_diffusion/');
@@ -67,7 +67,7 @@ function data = sample_diffusion_init_data(cell_name)
             % dt is not needed for computer simulation,
             % but it is needed for compute recovery curve and
             % estimate the diffusion coefficient from the simulation
-            data.dt = 0.002;
+            data.dt = 0.25;
 
         case 'spot_diffusion',
             data.path = strcat(root,'simulation/spot_diffusion/');
@@ -81,14 +81,14 @@ function data = sample_diffusion_init_data(cell_name)
             data.num_bits = 8;
             data.mag = 100; %magnification
             % additional input for estimate_simulation
-            data.dt = 9.7656e-04;
+            data.dt = 0.25;
 
         case 'tensor_diffusion',
             data.path = strcat(root,'simulation/tensor_diffusion/');
-            data.diff_const = [5.0 100.0 5.0]; 
-            % mu m^2/s 
-            % first number  - white part; 
-            % second number - along filament; 
+            data.diff_const = [5.0 100.0 5.0];
+            % mu m^2/s
+            % first number  - white part;
+            % second number - along filament;
             % third number  - perpendicular to filament.
             data.first_file = 'cell_after_photobleach.PNG';
             image_before = imread(strcat(data.path, 'cell_before_photobleach.PNG'));
@@ -98,14 +98,14 @@ function data = sample_diffusion_init_data(cell_name)
             data.image_0 = imcrop(temp, data.rectangle); clear temp;
             data.num_bits = 8;
             data.mag = 100; %magnification
-            data.dt = 9.7656e-04; %sec
+            data.dt = 1; %sec
 
         case 'tensor_cross_2',
             data.path = strcat(root,'simulation/tensor_cross_2/');
-            data.diff_const = [5.0 100.0 5.0]; 
-            % mu m^2/s 
-            % first number  - white part; 
-            % second number - along filament; 
+            data.diff_const = [5.0 100.0 5.0];
+            % mu m^2/s
+            % first number  - white part;
+            % second number - along filament;
             % third number  - perpendicular to filament.
             data.first_file = 'cell_after_photobleach.PNG';
             image_before = imread(strcat(data.path, 'cell_before_photobleach.PNG'));
@@ -115,15 +115,15 @@ function data = sample_diffusion_init_data(cell_name)
             data.image_0 = imcrop(temp, data.rectangle); clear temp;
             data.num_bits = 8;
             data.mag = 100; %magnification
-            data.dt = 9.7656e-04; %sec
-            
+            data.dt = 1; %sec
+
         case 'tensor_cross',
             data.path = strcat(root,'simulation/tensor_cross/');
             data.output_path = strcat(data.path, 'output/');
-            data.diff_const = [5.0 100.0 5.0]; 
-            % mu m^2/s 
-            % first number  - white part; 
-            % second number - along filament; 
+            data.diff_const = [5.0 100.0 5.0];
+            % mu m^2/s
+            % first number  - white part;
+            % second number - along filament;
             % third number  - perpendicular to filament.
             data.first_file = 'cell_after_photobleach.PNG';
             image_before = imread(strcat(data.path, 'cell_before_photobleach.PNG'));
@@ -133,7 +133,7 @@ function data = sample_diffusion_init_data(cell_name)
             data.image_0 = imcrop(temp, data.rectangle); clear temp;
             data.num_bits = 8;
             data.mag = 100; %magnification
-            data.dt = 9.7656e-04; %sec
+            data.dt = 1; %sec
 
         case 'photobleach_cell',
             data.path = strcat(root, 'simulation/photobleach_cell/');
@@ -146,9 +146,9 @@ function data = sample_diffusion_init_data(cell_name)
             data.image_0 = imcrop(temp, data.rectangle); clear temp;
             data.num_bits = 8;
             data.mag = 100;
-            data.dt = 4.8828e-004; 
+            data.dt = 4.8828e-004;
 
-        case 'photobleach_cell_2', 
+        case 'photobleach_cell_2',
             % photobleached cell with variable diffusion coefficient
             % diffusion coefficient = 29 when y_image >= 200 pixel or y >= 31.25 um
             %                          1 when y_image <  200 pixel or y <  31.25 um
@@ -166,7 +166,7 @@ function data = sample_diffusion_init_data(cell_name)
             data.mag = 100;
             data.dt = 9.7656e-004;
 
-        case 'photobleach_cell_2b', 
+        case 'photobleach_cell_2b',
             % photobleached cell with variable diffusion coefficient
             % diffusion coefficient = 29 when y_image >= 200 pixel or y >= 31.25 um
             %                          1 when y_image <  200 pixel or y <  31.25 um
@@ -226,8 +226,8 @@ function data = sample_diffusion_init_data(cell_name)
             data.num_bits = 8;
             data.mag = 100;
             data.dt = 4.8828e-004; % required for estimate_simulation()
-    end;        
-            
+    end;
+
 
     if ~isfield(data, 'path'),
         data = init_data_0703_2014(cell_name);
@@ -240,8 +240,3 @@ function data = sample_diffusion_init_data(cell_name)
     end;
 
 return;
-
-
-
-
-

@@ -1,11 +1,15 @@
 % outer loop for optimization 
 % uses solution from previous steps as initial guess for later iterations
 % Created by Yiwen Shi, 07/2016, UCSD
-
+%
 % tensor_diffusion: 99 steps, [4.9987, 93.1667, 5.1059]
 % spot_diffusion: 8 steps, [28.9978, 5, 5, 5, 5]
 % layered_diffusion: 5 steps, [5, 19.9974]
-
+%
+% INPUT:
+%   data:      path to data file, eg: '/Users/Yiwen/Documents/MATLAB/layered.mat'
+%   tol:       tolerence of converge, eg: tol = 0.1
+%   cell_name: specific test case name, eg: 'layered_diffusion'
 
 function d = opt_loop(data, tol, cell_name)
 

@@ -7,6 +7,21 @@ function data = sample_diffusion_init_data(cell_name)
     root = '/Users/Yiwen/Desktop/for_yiwen/diffusion_data/diffusion/';
     data.cell_name = cell_name;
     switch cell_name
+        case 'test',
+            data.path = strcat(root,'simulation/test/');
+            data.diff_const = [5.0 20.0 30.0 1.0]; % mu m^2/s from outside to inside
+            data.first_file = 'cell_after_photobleach.PNG';
+            image_before = imread(strcat(data.path, 'cell_before_photobleach.PNG'));
+            rectangle_file = strcat(data.path, 'image_rectangle.data');
+            data.rectangle = get_rectangle(image_before, rectangle_file, 'format', '-ascii');
+            temp = imread(strcat(data.path,'cell_after_photobleach.PNG'));
+            data.image_0 = imcrop(temp, data.rectangle); clear temp;
+            data.num_bits = 8;
+            data.mag = 100; %magnification
+            % dt is not needed for computer simulation,
+            % but it is needed for compute recovery curve and
+            % estimate the diffusion coefficient from the simulation
+            data.dt = 0.25;
         case 'mem17', % the best Lyn-Src cell
             data.path = strcat(root, 'frap/mem17/');
             data.output_path = strcat(data.path, 'output/');

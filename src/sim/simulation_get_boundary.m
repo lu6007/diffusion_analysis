@@ -167,7 +167,7 @@ function boundary = simulation_get_boundary(name, data, varargin)
                             t(2:n-1), rr(4)*ones(n-2,1), ...
                             rr(3)*ones(n,1), rt, ...
                             rt(2:n-1), ones(n-2,1)];
-            case {'photobleach_cell', 'layered_diffusion', 'spot_diffusion', 'tensor_diffusion', 'tensor_cross_2'},
+            case {'photobleach_cell', 'layered_diffusion', 'spot_diffusion', 'tensor_diffusion', 'tensor_cross_2', 'test'},
                 boundary = init_boundary(data); 
         end;
         save(boundary_file, 'boundary');

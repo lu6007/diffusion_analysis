@@ -1,5 +1,5 @@
 % function data = init_diffuson_map(cell_name, data)
-% Initialize the Diffusion Coefficient or Diffusion Maps for  
+% Initialize the Diffusion Coefficient or Diffusion Maps for
 % Computer-generated Simulations
 %  parameter_name = {'load_file', 'save_file'};
 %  default_value = { 0, 1};
@@ -26,6 +26,32 @@ function data = init_diffusion_map(cell_name, data, varargin)
     end;
 
     switch cell_name,
+        case 'test',
+            boundary = data.boundary{1}; % outermost boundary of the cell from simulation_get_boundary.m
+            [num_rows, num_cols, ~] = size(data.image_0);
+            cell_bw = poly2mask(boundary(:,1), boundary(:,2), num_rows, num_cols);
+            % Note 10/13/2014
+            % The centroid of 1 triangle falls out of cell_bw
+            % The resulting diffusion tag has a zero value in that triangle
+            % The can be fixed by dilating cell_bw for a few pixels if
+            % needed.
+
+            % divide into 4 layers 1-4 from outside to inside
+            num_layers = 4;
+
+            [~, label_layer] = divide_layer(cell_bw, num_layers);
+            % diffusion_map    = zeros(num_rows, num_cols);
+            diffusion_map    = F(num_cols, num_rows);
+
+            % for i = 1:num_layers
+            %      diffusion_map = diffusion_map + (label_layer==i) * diff_const(i);
+            % end;
+
+            data.diff_map = uint8(diffusion_map);
+
+            if save_file,
+                imwrite(data.diff_map, data.diffusion_map_file, 'tiff');
+            end;
         case {'photobleach_cell', 'square_5_circle'},
             data.diff_coef = data.diff_const;
 
@@ -36,7 +62,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
             data.diff_vector = diff_const(1) * double(is_tri)...
                              + diff_const(2) * double(~is_tri);
 
-        case 'layered_diffusion', 
+        case 'layered_diffusion',
             boundary = data.boundary{1}; % outermost boundary of the cell from simulation_get_boundary.m
             [num_rows, num_cols, ~] = size(data.image_0);
             cell_bw = poly2mask(boundary(:,1), boundary(:,2), num_rows, num_cols);
@@ -44,7 +70,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
             % The centroid of 1 triangle falls out of cell_bw
             % The resulting diffusion tag has a zero value in that triangle
             % The can be fixed by dilating cell_bw for a few pixels if
-            % needed. 
+            % needed.
 
             % divide into 4 layers 1-4 from outside to inside
             num_layers = 4;
@@ -54,11 +80,11 @@ function data = init_diffusion_map(cell_name, data, varargin)
 
             for i = 1:num_layers
                  diffusion_map = diffusion_map + (label_layer==i) * diff_const(i);
-            end;  
+            end;
 
             data.diff_map = uint8(diffusion_map);
 
-            if save_file, 
+            if save_file,
                 imwrite(data.diff_map, data.diffusion_map_file, 'tiff');
             end;
 
@@ -72,10 +98,10 @@ function data = init_diffusion_map(cell_name, data, varargin)
 
             diffusion_map = diffusion_map + mask * diff_const(1) + ...
                             ((~mask)&(max(abs(double(im_spot(:,:,:))-125), [], 3)<=30)) * diff_const(2);
-            
+
             data.diff_map = uint8(diffusion_map);
 
-            if save_file, 
+            if save_file,
                  imwrite(data.diff_map, data.diffusion_map_file, 'tiff');
             end;
 
@@ -83,12 +109,12 @@ function data = init_diffusion_map(cell_name, data, varargin)
             temp = imread(strcat(data.path, 'diffusion_spot.png'));
             im_spot = imcrop(temp, data.rectangle); clear temp;
             [num_rows, num_cols, ~] = size(data.image_0);
-            
+
             % Define diffusion direction on the filaments.
             orientation_file = strcat(data.path, 'output/orientation.mat');
 
-            if ~exist(orientation_file, 'file'), 
-                h = figure; imagesc(im_spot); title('Diffusion Map'); color bar; 
+            if ~exist(orientation_file, 'file'),
+                h = figure; imagesc(im_spot); title('Diffusion Map'); color bar;
                 hold on;
                 waitfor(msgbox({'Define diffusion direction*:',' ',...
                     '1.Start with the highest filament and go downward to other filaments',' ',...
@@ -98,7 +124,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
 
                 [x,y]=getpts;
                 data.orientation = [x,y];
-                save(orientation_file,'x','y'); 
+                save(orientation_file,'x','y');
             else
                 ori = load(orientation_file);
                 x = ori.x; y = ori.y;
@@ -109,24 +135,24 @@ function data = init_diffusion_map(cell_name, data, varargin)
             num_lines=numel(x)/2;
 
             % diffusion tensor matrix, D{i} defines the direction of different filaments
-            D = cell(num_lines,1); 
+            D = cell(num_lines,1);
 
             for i = 1:num_lines,
                 a(i)=x(2*i)-x(2*i-1);
                 b(i)=y(2*i)-y(2*i-1);
                 % Normalizing
                 temp = sqrt(a(i)*a(i)+b(i)*b(i));
-                a(i) = a(i)/temp; 
+                a(i) = a(i)/temp;
                 b(i) = b(i)/temp; clear temp;
                 % Calculate the diffusion tensor with the transforming matrix T
                 T = [a(i) b(i); -b(i) a(i)]';
                 D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; % D{i} is symmetric
             end
             %[a, b] is a 2*n matrix with each column corresponding to a filament
-            
+
             % diffusion_spot.png
-            % White part: diff_coef = [5; 0; 5]. 
-            % Gray part : diff_coef = [D11; D12; D22]. 
+            % White part: diff_coef = [5; 0; 5].
+            % Gray part : diff_coef = [D11; D12; D22].
             diffusion_map = zeros(num_rows, num_cols,3);
             se = strel('square',3);
             tag_matrix = imdilate((max(abs(double(im_spot(:,:,:)) -255), [],3)<=30),se); %dilate the white part
@@ -136,9 +162,9 @@ function data = init_diffusion_map(cell_name, data, varargin)
             diffusion_map(:,:,3)= tag_matrix * diff_const(1);
             temp = diffusion_map; clear diffusion_map;
 
-            mask_nonwhite = ~tag_matrix; 
+            mask_nonwhite = ~tag_matrix;
             tag_matrix = (mask_nonwhite) & (max(abs(double(im_spot(:,:,:))-125), [], 3)<=30);
-            % nonwhite mask AND gray 
+            % nonwhite mask AND gray
             % The 1st filament lies at the region y<225
             % The 2nd filament lies at the region y>225
             mask = [ones(225, num_cols); zeros(num_rows-225, num_cols)];
@@ -159,7 +185,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
             if save_file,
                 imwrite(data.diff_map, data.diffusion_map_file, 'tiff');
             end;
-            
+
         case 'tensor_cross_2',
             temp = imread(strcat(data.path, 'diffusion_spot.png'));
             t1 = imread(strcat(data.path, 't1.png'));
@@ -168,12 +194,12 @@ function data = init_diffusion_map(cell_name, data, varargin)
             tt1 = imcrop(t1, data.rectangle); clear t1;
             tt2 = imcrop(t2, data.rectangle); clear t2;
             [num_rows, num_cols, ~] = size(data.image_0);
-            
+
             % Define diffusion direction on the filaments.
             orientation_file = strcat(data.path, 'output/orientation.mat');
 
             if ~exist(orientation_file, 'file'), %11/24
-                h = figure; imagesc(im_spot); title('Diffusion Map'); color bar; 
+                h = figure; imagesc(im_spot); title('Diffusion Map'); color bar;
                 hold on;
                 waitfor(msgbox({'Define diffusion direction*:',' ',...
                     '1.Start with the highest filament and go downward to other filaments',' ',...
@@ -183,7 +209,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
 
                 [x,y]=getpts;
                 data.orientation = [x,y];
-                save(orientation_file,'x','y'); 
+                save(orientation_file,'x','y');
             else
                 ori = load(orientation_file);
                 x = ori.x; y = ori.y;
@@ -193,40 +219,40 @@ function data = init_diffusion_map(cell_name, data, varargin)
 
             ORI = data.orientation;
             disp('     x         y');
-            disp(ORI);    
+            disp(ORI);
 
             num_lines=numel(x)/2;
 
             % diffusion tensor matrix, D{i} defines the direction of different filaments
-            D = cell(num_lines,1); 
+            D = cell(num_lines,1);
 
             for i = 1:num_lines,
                 a(i)=x(2*i)-x(2*i-1);
                 b(i)=y(2*i)-y(2*i-1);
                 % Normalizing
                 temp = sqrt(a(i)*a(i)+b(i)*b(i));
-                a(i) = a(i)/temp; 
+                a(i) = a(i)/temp;
                 b(i) = b(i)/temp; clear temp;
                 % Calculate the diffusion tensor with the transforming matrix T
                 T = [a(i) b(i); -b(i) a(i)]';
                 D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; % D{i} is symmetric
             end
             %[a, b] is a 2*n matrix with each column corresponding to a filament
-            
+
             % diffusion_spot.png
-            % In the white part: diff_coef = [5; 0; 5]. 
-            % In the gray part : diff_coef = [D11; D12; D22]. 
+            % In the white part: diff_coef = [5; 0; 5].
+            % In the gray part : diff_coef = [D11; D12; D22].
             diffusion_map = zeros(num_rows, num_cols,3);
             se = strel('square',3);
             tag_matrix = imdilate((max(abs(double(im_spot(:,:,:)) -255), [],3)<=30),se); %dilate the white part
 
-            % set diffusion map for background area            
+            % set diffusion map for background area
             diffusion_map(:,:,1)= tag_matrix* diff_const(1);
             diffusion_map(:,:,3)= tag_matrix* diff_const(1);
-            
+
             temp = diffusion_map; clear diffusion_map;
-            mask_nonwhite = ~tag_matrix; 
-            
+            mask_nonwhite = ~tag_matrix;
+
             % matrix for different tensors and the cross area
             tensor1 = (mask_nonwhite) & (max(abs(double(tt1(:,:,:))-125), [], 3)<=30);
             tensor2 = (mask_nonwhite) & (max(abs(double(tt2(:,:,:))-125), [], 3)<=30);
@@ -250,7 +276,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
             clear temp tag_matrix;
 
             data.diff_map = uint8(diffusion_map+2^7);  %make all the numbers positive
-            data.D = D; 
+            data.D = D;
 
             % save tensor and cross area for later use
             data.tensor1 = tensor1;
@@ -273,7 +299,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
             % Define diffusion direction on the filaments.
             orientation_file = strcat(data.path, 'output/orientation.mat');
             if ~exist(orientation_file, 'file'),
-                h = figure; imagesc(im_spot); title('Diffusion Map'); color bar; 
+                h = figure; imagesc(im_spot); title('Diffusion Map'); color bar;
                 hold on;
                 waitfor(msgbox({'Define diffusion direction*:',' ',...
                     '1.Start with the highest filament and go downward to other filaments',' ',...
@@ -283,8 +309,8 @@ function data = init_diffusion_map(cell_name, data, varargin)
 
                 [x,y]=getpts;
                 % Save the coordinates of the filaments.
-                data.orientation = [x,y];  
-                save(orientation_file,'x','y'); 
+                data.orientation = [x,y];
+                save(orientation_file,'x','y');
             else
                 ori = load(orientation_file);
                 x = ori.x; y = ori.y;
@@ -293,7 +319,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
             end;
             ORI = data.orientation;
             disp('     x         y');
-            disp(ORI);    
+            disp(ORI);
 
             num_lines=numel(x)/2;
             D = cell(num_lines,1); % diffusion tensor matrix
@@ -302,34 +328,34 @@ function data = init_diffusion_map(cell_name, data, varargin)
                 b(i)=y(2*i)-y(2*i-1);
                 % Normalizing
                 temp = sqrt(a(i)*a(i)+b(i)*b(i));
-                a(i) = a(i)/temp; 
+                a(i) = a(i)/temp;
                 b(i) = b(i)/temp; clear temp;
                 % Calculate the diffusion tensor with the transforming matrix T
                 T = [a(i) b(i); -b(i) a(i)]';
                 D{i} = T'*[diff_const(2) 0; 0 diff_const(3)]*T; % D{i} is symmetric
             end
             %[a, b] is a 2*n matrix with each column corresponding to a filament
-            
+
             % diffusion_spot.png
-            % In the white part: diff_coef = [5; 0; 5]. 
-            % In the gray part : diff_coef = [D11; D12; D22]. 
+            % In the white part: diff_coef = [5; 0; 5].
+            % In the gray part : diff_coef = [D11; D12; D22].
             diffusion_map = zeros(num_rows, num_cols,3);
             temp_map = zeros(num_rows, num_cols,2);
             se = strel('square',3);
             tag_matrix1 = imdilate((max(abs(double(im_spot1(:,:,:)) -255), [],3)<=30),se);
             tag_matrix2 = imdilate((max(abs(double(im_spot2(:,:,:)) -255), [],3)<=30),se);%dilate the white part
-             
+
             diffusion_map(:,:,1)= tag_matrix1* diff_const(1);
             diffusion_map(:,:,3)= tag_matrix1*diff_const(1);
             temp = diffusion_map; clear diffusion_map;
-            
+
             mask_nonwhite1 = ~tag_matrix1;
             mask_nonwhite2 = ~tag_matrix2;
-            
+
             tag_matrix1 = (mask_nonwhite1) & (max(abs(double(im_spot1(:,:,:))-125), [], 3)<=30);
             tag_matrix2 = (mask_nonwhite2) & (max(abs(double(im_spot2(:,:,:))-125), [], 3)<=30);
             tag_matrix3 = (tag_matrix1) & (tag_matrix2);
-            
+
             mask = ones(num_rows, num_cols);
             diffusion_map(:,:,1) = temp(:,:,1) ...
                                  + (tag_matrix1.*mask)*D{1}(1,1) ...
@@ -348,12 +374,12 @@ function data = init_diffusion_map(cell_name, data, varargin)
             clear temp tag_matrix;
             data.temp_map = uint8(data.temp_map+2^7);
             data.diff_map = uint8(diffusion_map+2^7);  %make all the numbers positive
-            data.D = D; 
+            data.D = D;
 
             if save_file,
                 imwrite(data.diff_map, data.diffusion_map_file, 'tiff');
             end;
-            
-             
+
+
     end;
 return;

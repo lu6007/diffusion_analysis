@@ -4,7 +4,7 @@
 %
 % Example
 % >> cell_name = 'mem17';
-% >> data = diffusion_init_data(cell_name);
+% >> data = sample_diffusion_init_data(cell_name);
 % >> estimate_frap(data);
 %
 % Sub-functions

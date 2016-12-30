@@ -13,7 +13,7 @@
 % >> computer_simulation(data);
 %
 % The variable cell_name can take the values of 'photobleach_cell',
-% 'photobleach_cell_2', 'square_5_circle', 'layered_diffusion', 
+% 'photobleach_cell_2', 'square_5_circle', 'layered_diffusion',
 % 'tensor_diffusion', etc
 
 % Copyright: Shaoying Lu and Yingxiao Wang 2012-2016
@@ -60,40 +60,45 @@ function data = computer_simulation(data, varargin)
     % p_image: node points with x and y values
     % edge and tri defines the mesh.
     % dl is probably the boundary condition
-    % boundary = data.boundary;
     rr = data.rectangle;
-    if ~iscell(boundary), 
+
+    if ~iscell(boundary),
         % create mesh with 1 boundary
         mesh = create_mesh(boundary, 'method', 1);
-    else % create mesh with 2 or more boundaries
+    else % create mesh with multi boundaries
         mesh = create_mesh(boundary, 'method', 2);
         temp = boundary{1}; clear boundary;
         boundary = temp; clear temp;
     end;
+
     c_max = 2^16;
     color_bound = [0 c_max-1];
-%     this_gray = gray(c_max); 
-%     this_jet = jet(c_max);
     axis_bound = [1 rr(3) 1 rr(4) 1 c_max];
     graph_pos = [200 200 rr(3) rr(4)];
+
     % draw image and plot initial mesh
-    figure(1); set(gcf, 'color', 'w'); 
-    hold on; image(image_0); 
-    view(2); axis ij; colormap(gray); 
+    figure(1);
+    set(gcf, 'color', 'w'); hold on;
+    image(image_0);
+    view(2); axis ij;
+    colormap(gray);
     set(gca, 'FontSize', 12, 'FontWeight','bold',...
-            'Box', 'off', 'LineWidth', 1.5);
+             'Box', 'off', 'LineWidth', 1.5);
     title('Image Right after Photobleach');
-    %
+
+
     if isfield(data, 'diff_map'),
-        figure(2); set(gcf, 'color', 'w'); 
+        figure(2);
+        set(gcf, 'color', 'w');
         imagesc(data.diff_map); hold on;
         pdemesh(mesh.node,mesh.edge,mesh.tri);
-        view(2); axis ij; 
+        view(2); axis ij;
         set(gca, 'FontSize', 12, 'FontWeight','bold',...
-                'Box', 'off', 'LineWidth', 1.5);
+                 'Box', 'off', 'LineWidth', 1.5);
         title('Initial Triangular Mesh');
     end;
-    % refine mesh 
+
+    % refine mesh
     refine_improve = 2;
     new_mesh = refine_mesh(mesh, 'method',refine_improve, 'num_refines',1);
     % p_image contains the (x,y) positions of the nodes in the image
@@ -103,79 +108,86 @@ function data = computer_simulation(data, varargin)
     clear new_mesh;
     mag = data.mag;
     p = scale_by_magnification(p_image,mag);
+
     % plot mesh
-    h = figure(3); set(gcf, 'color', 'w'); hold on;
-    image(image_0); 
+    h = figure(3);
+    set(gcf, 'color', 'w'); hold on;
+    image(image_0);
     pdemesh(p_image,edge,tri);
-    view(2); axis ij; colormap(gray); 
+    view(2); axis ij; colormap(gray);
     set(gca, 'FontSize', 12, 'FontWeight','bold',...
-            'Box', 'off', 'LineWidth', 1.5);
+             'Box', 'off', 'LineWidth', 1.5);
     title('Refined Mesh');
     if mark_subregion,
         mark_mesh_subregion(mesh,'handle', h);
     end;
-    
+
     % Compute initial solution
     lw = 0.5; % LineWidth
     p_ij = [p_image(2,:); p_image(1,:)]; % switch from (x,y) to (i,j)
     v_0 = concentration_to_vector(image_0(:,:,1),p_ij);
-    figure(4); set(gcf, 'color', 'w'); hold on; 
-    x1 = boundary(:,1); y1 = boundary(:,2);  
+
+    figure(4);
+    set(gcf, 'color', 'w'); hold on;
+    x1 = boundary(:,1); y1 = boundary(:,2);
     plot3(x1, y1, c_max*ones(size(x1)),'r', 'LineWidth', lw);
     pdesurf(p_image,tri,v_0);
     set(gca, 'FontSize', 12, 'FontWeight', 'Bold', 'LineWidth',1.5, ...
-        'YDir', 'reverse');
-    view(2); shading interp; caxis(color_bound); colormap(gray); %colormap(this_gray); 
+             'YDir', 'reverse');
+    view(2); shading interp; caxis(color_bound); colormap(gray);
     colorbar;
     title('Initial Concentration before Smoothing');
 
     % Calculate the diffusion vector
-    data.tri_centroid = (p_image(:,tri(1,:))+p_image(:,tri(2,:))+p_image(:,tri(3,:)))/3.0;
+    data.tri_centroid = (p_image(:,tri(1,:)) + p_image(:,tri(2,:)) + p_image(:,tri(3,:))) / 3.0;
     data = simulation_get_diffusion_vector(cell_name, data, tri(4,:));
     diff_coef = data.diff_coef;
-    diff_tag = data.diff_tag;
+    diff_tag  = data.diff_tag;
+
     % Visualize the diffusion vector diff_coef
     if isfield(data, 'diff_map'),
-        figure; set(gcf, 'color', 'w'); 
+        figure; set(gcf, 'color', 'w');
         num_nodes = length(mesh.node);
         pdesurf(p_image,tri,(diff_coef)'); hold on;
         pdemesh(mesh.node,mesh.edge,mesh.tri, (max(max(diff_coef))+1)*ones(1,num_nodes));
-        view(2); axis ij; 
+        view(2); axis ij;
         set(gca, 'FontSize', 12, 'FontWeight','bold',...
-                'Box', 'off', 'LineWidth', 1.5);
+                 'Box', 'off', 'LineWidth', 1.5);
         title('Diffusion Coefficients Overlaid with Mesh');
         clear mesh;
     end;
-    
+
+    if isfield(data, 'diff_map'),
+        figure; set(gcf, 'color', 'w');
+        num_nodes = length(p_image);
+        pdesurf(p_image,tri,(diff_coef)'); hold on;
+        pdemesh(p_image,edge,tri, (max(max(diff_coef))+1)*ones(1,num_nodes));
+        view(2); axis ij;
+        set(gca, 'FontSize', 12, 'FontWeight','bold',...
+                 'Box', 'off', 'LineWidth', 1.5);
+        title('Diffusion Coefficients Overlaid with Refined Mesh');
+        clear mesh;
+    end;
+
     % assemble linear system
     % let the initial solution diffuse for t0 sec
     % so that it smoothes out at boundary;
     % [K M] = assemble_matrix(p, tri);
     [K_diff_coef, M] = assemble_matrix(p, tri, 'diff_coef', diff_coef');
-    t0 = 2.9/mean(diff_const); % 
+    t0 = 2.9/mean(diff_const);
     backward_eular= 2;
     u_0 = simulate_diffusion(v_0, t0, K_diff_coef,M,'method', backward_eular);
-%     if length(diff_const) ==1,
-%         u_0 = simulate_diffusion(v_0, t0, K_diff_coef,M,'method', backward_eular);
-%     else
-%        [K_diff_coef_maxd, M_maxd] = assemble_matrix(p, tri, 'diff_coef', max(diff_const));
-%         u_0 = simulate_diffusion(v_0, t0, K_diff_coef_maxd,M_maxd,'method', backward_eular);
-%         clear K_diff_coef_maxd M_maxd;
-%     end;
-    
-    % adjust time stepping 
+
+    % adjust time stepping
     % until the solution converges
     % using the backward Eular method
-    %dt = 10; %dt = 0.25; % s 
-    %[~,dt] = adjust_time_stepping(dt,u_0,M,K_diff_coef); comment this and
-    %make dt = 0.25 s following Dr.Bank's suggestion. 11/24/14
-    % For better format, use str_1 = sprintf(...); display(str_1); 
+    % For better format, use str_1 = sprintf(...); display(str_1);
     display(dt);
 
     % simulate diffusion for <= 30 seconds
     % until the fluorescence recovery stops.
     % Compute fluorescence recovery curve.
-    num_steps = floor(simulation_time/dt); % default = 40; 
+    num_steps = floor(simulation_time/dt); % default = 40;
     show_image = 40;
     u = zeros(length(u_0),num_steps+1);
     for i=1:num_steps+1,
@@ -190,140 +202,119 @@ function data = computer_simulation(data, varargin)
         file_name = strcat(output_dir, num2str(i), '.tiff');
         if ((i<=6) || i ==floor(i/show_image)*show_image),
             figure;
+            i
             set(gcf, 'position', graph_pos, 'color', 'w');
-            %set(gcf, 'color', 'w');
-            pdesurf(p_image,tri,u(:,i)); hold on;           
-            %pdesurf(p_image,tri,(diff_tag)'); 
-            %a way to visualize diff_tag. For pdesurf(p,t,u), when u is a
-            %row vector, pdesurf plots the triangle data instead of the
-            %node data.
+            pdesurf(p_image,tri,u(:,i)); hold on;
+
             if ~exist(file_name, 'file'),
-                cmap = gray; %this_gray;
+                cmap = gray;
             else
-                cmap = jet; %this_jet;
+                cmap = jet;
             end;
-            view(2); shading interp; colormap(cmap); %colormap(this_jet);
-            axis(axis_bound); axis off; caxis([0 2^16]); % image became broken after this step... %05/21/15
+
+            view(2); shading interp; colormap(cmap);
+            axis(axis_bound); axis off; caxis([0 2^16]);
             set(gca, 'position', [0 0 1 1],'YDir','reverse');
             pause(1);
+
             if ~exist(file_name, 'file'),
+
                 % The print statement is needed for the getframe function
-                % to get the correct value: windows 8.1 and matlab 2013b
-                % 07/01/2014
-                print -dbitmap  
-               %
+                print -dbitmap
                 ff = getframe(gca);
-                % The output from getframe is uint8, now we need to scale the
-                % data to uint16
+
+                % Convert the output of getframe from uint8 to uint16
                 im_i = 2^8*uint16(double(ff.cdata(:,:,1)));
                 imwrite(im_i,file_name,'tiff','compression','none');
                 clear ff im_i;
-%                 % print statemnet 06/30/2014
-%                 print('-dtiffn', '-r58.7', file_name);
+
             end;
-            % close(h);
         end;
         clear file_name;
     end;
-    
+
     output_file = strcat(output_dir,'simulation_result.mat');
-    output_file2 = strcat(output_dir,'mass_stiffness_matrix.mat'); %03/27/15 
-    %asked to save stiffness and mass matrix by Kathy ??? 
+    output_file2 = strcat(output_dir,'mass_stiffness_matrix.mat');
+
     if save_file,
         save(output_file, 'u','v_0','M','p','p_image','tri','edge');
         save(output_file2, 'M','K_diff_coef');
     end;
-       
-    %
+
     figure;
     set(gcf, 'position', graph_pos, 'color', 'w');
-    %set(gcf, 'color', 'w');
-    %pdesurf(p_image,tri,u(:,2)-u(:,1)); hold on;
     pdesurf(p_image,tri,u(:,6)-u(:,5)); hold on; %12/3/14
-    view(2); shading interp; 
-    colormap(jet); %colormap(this_jet);
+    view(2); shading interp;
+    colormap(jet);
     axis(axis_bound); axis off; caxis([-500 500]);
     set(gca, 'position', [0 0 1 1],'YDir','reverse');
     clear time;
-    
-    if estimate_diffusion,
-    % % estimate the diffusion constant
-    % % using the last quarter of solution profile.
-    % % The Crank-Nicolson Scheme is used for accuracy
-    % i_0 = floor(0.75*num_steps);
-    % drive = -dt*K*0.5*(u(:,i_0)+u(:,i_0+1));
-    % Mdu = M*(u(:,i_0+1)-u(:,i_0));
-    % for i= i_0+1:num_steps-1,
-    %     drive = [drive; -dt*K*0.5*(u(:,i)+u(:,i+1))];
-    %     Mdu = [Mdu; M*(u(:,i+1)-u(:,i))];
-    % end;
-    % est_diff_const = drive\Mdu
 
-    % Estimate the diffusion constant using backward Eular,
-    % then refine mesh and test the estimation of diff_const
+    if estimate_diffusion,
+        % % estimate the diffusion constant
+        % % using the last quarter of solution profile.
+        % % The Crank-Nicolson Scheme is used for accuracy
+        % i_0 = floor(0.75*num_steps);
+        % drive = -dt*K*0.5*(u(:,i_0)+u(:,i_0+1));
+        % Mdu = M*(u(:,i_0+1)-u(:,i_0));
+        % for i= i_0+1:num_steps-1,
+        %     drive = [drive; -dt*K*0.5*(u(:,i)+u(:,i+1))];
+        %     Mdu = [Mdu; M*(u(:,i+1)-u(:,i))];
+        % end;
+        % est_diff_const = drive\Mdu
+
+        % Estimate the diffusion constant using backward Eular,
+        % then refine mesh and test the estimation of diff_const
         [K, M] = assemble_matrix(p, tri);
         [est_diff_const, ~, ~] = get_diffusion_constant(u(:,1),u(:,2), M, K, dt);
         display(est_diff_const);
-        %
+
         [p1_image, ~, t1, u1] = refinemesh(dl,p_image,edge,tri,u(:,1:2));
         p1 = scale_by_magnification(p1_image,mag);
-        %p1 = p1_image*scale;
+
         [K1, M1] = assemble_matrix(p1, t1);
         [est_diff_const, ~, ~] = get_diffusion_constant(u1(:,1), u1(:,2),...
-            M1, K1, dt);
+                                                        M1, K1, dt);
         display(est_diff_const);
     end;
-    
+
     % output for pltmg
-    if save_file, 
-        %vxvyu1u2 = [p' u(:,1:2)]; % num_nodes x 4 
-        vxvyu2u3 = [p' u(:,2:3)]; % 12/24/14
-        num_nodes = size(p,2); %11153
-        num_tris = size(tri,2);%21888
-        itnodes = tri'; % num_tris x 4
+    if save_file,
+
+        vxvyu2u3 = [p' u(:,2:3)];
+        num_nodes = size(p,2);   % 11153
+        num_tris = size(tri,2);  % 21888
+        itnodes = tri';          % num_tris x 4
         num_edges = size(edge,2);
         ibndary = edge([1 2 7],:)'; % num_edges x 3
         % The 4th column of itnodes marks the region of photobleach
         % it is not important in the examples.
         % In the layered problem the 4th columns is the labeling of the
         % subregions.
-        if isfield(data, 'diff_map') && ~isempty(diff_tag), 
-            itnodes(:,4) = diff_tag; 
+        if isfield(data, 'diff_map') && ~isempty(diff_tag),
+            itnodes(:,4) = diff_tag;
         end;
-    %   figure; plot(diff_tag)
 
-    % if  cell_name == 'tensor_diffusion'
-    %     save(strcat(output_dir,cell_name, '.data'), 'ori','num_nodes','vxvyu1u2',...
-    %         'num_tris', 'itnodes', 'num_edges', 'ibndary','-ascii'); %11/18/14
-    % else
         save(strcat(output_dir,cell_name, '.data'), 'num_nodes','vxvyu2u3',...
             'num_tris', 'itnodes', 'num_edges', 'ibndary','-ascii');
         clear vxvyu2u3 ibndary itnodes;
-        
-%         u1_12 = (u(:,1)-min(min(u(:,1),u(:,2))))/(max(max(u(:,1),u(:,2)))-min(min(u(:,1),u(:,2))));
-%         u2_12 = (u(:,2)-min(min(u(:,1),u(:,2))))/(max(max(u(:,1),u(:,2)))-min(min(u(:,1),u(:,2))));
-%         u2_23 = (u(:,2)-min(min(u(:,2),u(:,3))))/(max(max(u(:,2),u(:,3)))-min(min(u(:,2),u(:,3))));
-%         u3_23 = (u(:,3)-min(min(u(:,2),u(:,3))))/(max(max(u(:,2),u(:,3)))-min(min(u(:,2),u(:,3))));
 
     end;
-% end
-    
-    
-    
- 
+
 return;
 
 % function mark_mesh_subregion(mesh)
 % Mark the triangles with the subregion it belongs on the current figure
-% Mark the edges with the subregion it belongs. 
+% Mark the edges with the subregion it belongs.
 
 % Copyright: Shaoying Lu and Yingxiao Wang 2016
 function mark_mesh_subregion(mesh, varargin)
-parameter_name = {'handle'};
-default_value = {gcf};
-handle = parse_parameter(parameter_name, default_value, varargin);
 
-    figure(handle); hold on; 
+    parameter_name = {'handle'};
+    default_value = {gcf};
+    handle = parse_parameter(parameter_name, default_value, varargin);
+
+    figure(handle); hold on;
     ee = mesh.edge([1, 2, 7],:)';
     pp = mesh.node';
     mm = 0.5*(pp(ee(:,1),:)+pp(ee(:,2),:));
@@ -332,29 +323,20 @@ handle = parse_parameter(parameter_name, default_value, varargin);
         text(mm(ii,1), mm(ii,2), num2str(i),'color','k');
         clear ii;
     end;
-%       % Edge number
-%     for i = 1:size(ee,1),
-%         text(mm(i,1), mm(i,2)+5, num2str(i), 'color','r');
-%     end;
-    % Edge orientation
+
     mm1 = 0.75*pp(ee(:,1),:)+0.25*pp(ee(:, 2),:);
     mm2 = 0.25*pp(ee(:,1),:)+0.75*pp(ee(:, 2),:);
     text(mm1(:,1), mm1(:,2), 'o');
     text(mm2(:,1), mm2(:,2), '+');
-    clear mm mm1 mm2; 
+    clear mm mm1 mm2;
+
     % mark triangles
-   tt = mesh.tri';
+    tt = mesh.tri';
     for i = 1:8,
         ii = (tt(:, 4) == i);
         mm = 0.3333*(pp(tt(ii,1),:)+pp(tt(ii,2),:)+pp(tt(ii,3),:));
         text(mm(:,1), mm(:,2), num2str(i), 'color', 'r');
         clear ii mm;
     end;
+
 return
-
-
-
-
-
-
-

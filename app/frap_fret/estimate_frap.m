@@ -109,34 +109,41 @@ if ~exist(result_file,'file'),
         switch type
             case 'cell',
                 if isfield(data,'threshold') && data.threshold,
-                    [bd_t, bw_t] = get_cell_edge(im_t, 'method', 1, 'threshold', data.threshold, ...
+                    [bd_t, ~] = get_cell_edge(im_t, 'method', 1, 'threshold', data.threshold, ...
                         'smoothing_factor', 3, 'min_area', min_area, 'show_figure', 1);
                 elseif isfield(data,'brightness_factor') && data.brightness_factor,
                     figure; imagesc(im_t);
-                    [bd_t,bw_t] = get_cell_edge(im_t, 'method',1, ...
+                    [bd_t,~] = get_cell_edge(im_t, 'method',1, ...
                         'smoothing_factor', 3,'show_figure',1, 'brightness_factor', data.brightness_factor,...
                         'min_area', min_area, 'show_figure',1);
                 else % there is no threshold
                     figure; imagesc(im_t);
-                     [bd_t, bw_t] = get_cell_edge(im_t, 'method', 1, ...
+                     [bd_t, ~] = get_cell_edge(im_t, 'method', 1, ...
                         'smoothing_factor', 3,'min_area', min_area,  'show_figure', 1);
                 end;
             case 'solution',
                 if i ==1,
-                figure; imagesc(im_t); title('Please Select the Region for the Solution');
-                [bw_t, xi, yi] = roipoly();
-                %hold on; plot(yi,xi, 'r');
-                bd_t = [yi xi];
+                    figure; imagesc(im_t); title('Please Select the Region for the Solution');
+                    [~, xi, yi] = roipoly();
+                    %hold on; plot(yi,xi, 'r');
+                    bd_t = [yi xi];
                 else % i>1
-                    bw_t = bw{1};
+                    % bw_t = bw{1};
                     bd_t = bd{1};
                 end
         end
                 
         im(:,:,1,i) = im_t;
-        %bd{i} = bd_t{1};
-        bd{i} = bd_t;
-        bw{i} = bw_t;
+        if size(bd_t,1) ==1, %Compatibility
+            bd{i} = bd_t{1};
+        else
+            bd{i} = bd_t;
+        end;
+        bw_t = true(size(im_t));
+        % The mask was calculated based on the boundary to 
+        % avoid the problem that the detected mask does not
+        % give a connected mask image.
+        bw{i} = bd2im(bw_t, bd{i}(:,2), bd{i}(:,1)); 
         clear index_str image_file temp bd_t bw_t im_t;
     end;
 
@@ -180,12 +187,14 @@ end; %if ~exist(result_file,'file'),
 color = ['r' 'w' 'g' 'y' 'k' 'b' 'g'];
 ll = last_frame_before;
 figure; imagesc(im(:,:,1,ll)); hold on;
+title('Last image before PB with its (r) and other edges (w,g, etc) before PB');
 for i = 0:length(index_before)-1,
-    plot(bd{ll-i}(:,2), bd{ll-i}(:,1), color(i+1), 'LineWidth',2);
+    plot(bd{ll-i}(:,2), bd{ll-i}(:,1), color(i+1), 'LineWidth',2); 
 end;
 figure; imagesc(im(:,:,1,ll)); hold on;
+title('Last image before PB with its (r) and other edges (w,g, etc) after PB');
 for i = 0:length(index_after)-1,
-    plot(bd{ll+i}(:,2), bd{ll+i}(:,1), color(i+1), 'LineWidth',2);
+   plot(bd{ll+i}(:,2), bd{ll+i}(:,1), color(i+1), 'LineWidth',2); 
 end;
 if ~correct_photobleaching,
     pb_factor = 1;
@@ -230,6 +239,7 @@ title_str = 'Please selected smaller boundary';
 [~, bd_t]= get_polygon(temp, boundary_file,title_str);
 % swap two rows in smaller_boundary in concentration_to_vector
 smaller_boundary = bd_t{1}; %[bd_t{1}(:,2) bd_t{1}(:,1)];
+display('Got the polygon, and continue...');
 clear bw_t bd_t temp;
 
 %
@@ -261,12 +271,12 @@ r = zeros(num_nodes, num_steps);
 for i = 1:num_steps,
     temp = con(:,:,:,first_frame_after+i-1);
     u(:,i) = concentration_to_vector(temp,p_image, 'method', method);
-    figure; imagesc(temp); title(strcat('Concentration map #', num2str(i))); 
-    colorbar; hold on;
-%     pdemesh(p_image,edge,tri, u(:,i)'); 
-    figure; pdesurf([p_image(2,:); p_image(1,:)],tri,u(:,i));
-    view(90,90); colormap jet; caxis([0 1.1]); colorbar;
-    title(strcat('solution #', num2str(i))); 
+%     figure; imagesc(temp); title(strcat('Concentration map #', num2str(i))); 
+%     colorbar; hold on;
+% %     pdemesh(p_image,edge,tri, u(:,i)'); 
+%     figure; pdesurf([p_image(2,:); p_image(1,:)],tri,u(:,i));
+%     view(90,90); colormap jet; caxis([0 1.1]); colorbar;
+%     title(strcat('solution #', num2str(i))); 
     clear temp;
 end;
 
@@ -288,7 +298,7 @@ for i= 1:num_steps-1,
         norm(u(:,i+1),2);
     relative_residual_norm_2 = norm(u(:,i+1)-est_u(:,i+1),2)/...
         norm(u(:,i+1)-u_i);
-    display(sprintf('%30f%20f%20f%20f', diff_const(i)/60, ...
+    display(sprintf('%34.4f%30.4f%20.4f%20.4f', diff_const(i)/60, ...
         relative_residual_norm, relative_residual_norm_2, R));
 end;
 
@@ -296,19 +306,18 @@ show_figure_result = 1;
 if show_figure_result,
     %cbound = [0.5, 1.1];
     s = max(p_image)-min(p_image);
-    width = s(1)*3; 
-    height = s(2)*3;
     for i = 1:2,
-        h = figure('position', [100, 200, width, height]);...
+        h = figure; 
             pdesurf(p_image,tri,u(:,i));
-        view(90,90); colormap jet; caxis(cbound); colorbar;
+        view(90,90); caxis(cbound); colorbar;
         set(gca, 'FontSize', 16);
         title(strcat('Concentration map ', num2str(i))); 
+        colormap jet;
 %         saveas(h,sprintf('%su_%d.fig',path,i+starting_step));
 %         saveas(h,sprintf('%su_%d.png',path,i+starting_step));
     end;
-    for i =1:2,
-        h = figure('position', [100, 200, width, height]); 
+    for i =2:2,
+        h = figure;
         pdesurf(p_image,tri,est_u(:,i));
         view(90,90); colormap jet; caxis(cbound); colorbar;
         set(gca, 'FontSize', 16);
@@ -318,7 +327,7 @@ if show_figure_result,
     end;
 
     error = zeros(size(u));
-    for i = 2:2,
+    for i = 1:1,
        %  error(:,i+1) = (u(:,i+1)-est_u(:,i+1))/abs(diff_const(i))/dt;
         error(:,i+1) = (u(:,i+1)-est_u(:,i+1))/norm(u(:,i+1)-u(:,i)*pb_factor);
     end;
@@ -327,8 +336,8 @@ if show_figure_result,
 %     end;
 
     cbound = [-0.005, 0.02];
-    for i = 2:2,
-        h = figure('position', [0,150, width, height]); 
+    for i = 1:1,
+        h = figure; 
         pdesurf(p_image,tri, abs(error(:,i+1)));
         view(90,90); colormap jet; caxis(cbound);colorbar;
         set(gca, 'FontSize', 16);

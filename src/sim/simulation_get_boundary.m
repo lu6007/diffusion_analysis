@@ -19,18 +19,18 @@ function boundary = simulation_get_boundary(name, data, varargin)
     % The interface is calculated based on data.diff_map
 
     boundary_file = strcat(data.path, 'boundary.mat');
-    if exist(boundary_file, 'file') && load_file,
+    if exist(boundary_file, 'file') && load_file
         res = load(boundary_file);
         boundary = res.boundary;
         % rectangle = res.rectangle;
         % Add the subregion interface to the mesh
         % if length(boundary) == 3 && option == 2, % Add Interface
-        if length(boundary) == 2 && option == 2, % Add Interface
-            switch name,
-                case 'layered_diffusion',
+        if length(boundary) == 2 && option == 2 % Add Interface
+            switch name
+                case 'layered_diffusion'
                     num_subregions = length(data.diff_const);
                     cc = 10;
-                    for i = 2:num_subregions,
+                    for i = 2:num_subregions
                         bd = bwboundaries(data.diff_map == data.diff_const(i), 4, 'noholes');
                         % coarsen by a factor of 10
                         nn = length(bd{1});
@@ -41,20 +41,38 @@ function boundary = simulation_get_boundary(name, data, varargin)
                         % boundary. 
                         boundary{i} = [bd{1}(nn:-cc:2,2), bd{1}(nn:-cc:2,1); bd{1}(1,2), bd{1}(1,1)];
                         clear bd;
-                   end;
-                   
-                case 'spot_diffusion',
+                    end
+
+                 case 'layered_diffusion_general'
+                    boundary(2) = [];
+                    
+%                     num_subregions = length(data.diff_const);
+%                     cc = 10;
+%                     for i = 2:num_subregions,
+%                         bd = bwboundaries(data.diff_map == data.diff_const(i), 4, 'noholes');
+%                         % coarsen by a factor of 10
+%                         nn = length(bd{1});
+%                         % bd{1}(nn,:) is different from bd{1}(1, :)
+%                         % Turn the interface boundary from counter clockwsie to
+%                         % clockwise, which is the same between boundary{1} and
+%                         % boundary{2}. Add the first node to close the
+%                         % boundary.
+%                         boundary{i} = [bd{1}(nn:-cc:2,2), bd{1}(nn:-cc:2,1); bd{1}(1,2), bd{1}(1,1)];
+%                         clear bd;
+%                    end;                   
+
+                case 'spot_diffusion'
                     bd = bwboundaries(data.diff_map == data.diff_const(2), 4, 'noholes');
                     num_subregions = length(bd)+1;
                     cc = 10;
                     % turn the boundary around and close it up
-                    for i = 2:num_subregions,
+                    for i = 2:num_subregions
                         nn = length(bd{i-1});
                         boundary{i} = [bd{i-1}(nn:-cc:2, 2),bd{i-1}(nn:-cc:2,1); bd{i-1}(1,2), bd{i-1}(1,1)]; 
-                    end;
+                    end
                     clear bd;
 
-                case 'tensor_diffusion', 
+                case 'tensor_diffusion'
                     % set tag for boundaries
                     % boundary{1}: boundary for background
                     % boundary{2}: boundary for upper filament
@@ -90,7 +108,7 @@ function boundary = simulation_get_boundary(name, data, varargin)
                     boundary{3} = [bd{1}(nn:-cc:2,2), bd{1}(nn:-cc:2,1);bd{1}(1,2),bd{1}(1,1)];
                     clear bd
                     
-                case 'tensor_cross_2',
+                case 'tensor_cross_2'
                     % set tag for boundaries
                     % boundary{1}: boundary for background
                     % boundary{2 & 3}: boundary for upper filament
@@ -121,7 +139,7 @@ function boundary = simulation_get_boundary(name, data, varargin)
                     boundary{6} = [bd{1}(nn:-cc:2,2), bd{1}(nn:-cc:2,1);bd{1}(1,2),bd{1}(1,1)];
                     clear bd
 
-                case 'tensor_cross',
+                case 'tensor_cross'
                     num_subregions = 3;
                     cc = 10;
                     a = double(data.diff_map(:,:,1))-2^7;
@@ -140,27 +158,27 @@ function boundary = simulation_get_boundary(name, data, varargin)
                     nn = length(bd{1});
                     boundary{3} = [bd{1}(nn:-cc:2,2), bd{1}(nn:-cc:2,1);bd{1}(1,2),bd{1}(1,1)];
                    
-            end; % switch name
+            end % switch name
             % Check the orientation of the boundaries and interfaces. 
             figure(20); hold on;
-            for i = 1:length(boundary),
-                if i <=2,
+            for i = 1:length(boundary)
+                if i <=2
                     jj = 2;
                 else 
                     jj = 2;
-                end;
+                end
 
                 plot(boundary{i}(:,1), boundary{i}(:,2), 'r-');
                 plot(boundary{i}(1,1), boundary{i}(1,2), 'ko');
                 plot(boundary{i}(jj,1), boundary{i}(jj,2), 'k+');
-            end;
+            end
 
             save(boundary_file, 'boundary');
-        end; 
+        end 
 
     else
-        switch name,
-            case 'square_5_circle',
+        switch name
+            case 'square_5_circle'
                 rr = data.rectangle;
                 t = (1:50:501)'; n = length(t); rt = (501:-50:1)';
                 boundary = [ones(n,1), t, ...
@@ -169,9 +187,9 @@ function boundary = simulation_get_boundary(name, data, varargin)
                             rt(2:n-1), ones(n-2,1)];
             case {'photobleach_cell', 'layered_diffusion', 'spot_diffusion', 'tensor_diffusion', 'tensor_cross_2', 'test'},
                 boundary = init_boundary(data); 
-        end;
+        end
         save(boundary_file, 'boundary');
-    end;
+    end
 
 return;
 
@@ -184,7 +202,7 @@ function boundary = init_boundary(data)
     x2_file = strcat(pa, 'x2.data');
     y2_file = strcat(pa, 'y2.data');
 
-    if ~exist(x1_file,'file'),
+    if ~exist(x1_file,'file')
         figure; imshow(image_0); caxis auto;
         title('Please mark cell boundary');
         [~,~, ~, x1,y1] = roipoly();
@@ -193,9 +211,9 @@ function boundary = init_boundary(data)
     else
         x1 = load(x1_file);
         y1 = load(y1_file);
-    end;
+    end
 
-    if ~exist(x2_file,'file'),
+    if ~exist(x2_file,'file')
         figure; imshow(image_0); caxis auto;
         hold on; plot(x1,y1,'r--');
         title('Please mark ROI boundary')
@@ -205,7 +223,7 @@ function boundary = init_boundary(data)
     else
         x2 = load(x2_file);
         y2 = load(y2_file);
-    end;
+    end
 
     boundary{1} = [x1 y1];
     boundary{2} = [x2 y2];

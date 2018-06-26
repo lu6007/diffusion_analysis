@@ -31,14 +31,14 @@ function data = computer_simulation(data, varargin)
     diff_const = data.diff_const;
     num_bits = data.num_bits;
     output_dir =strcat(pa, 'output/');
-    if ~exist(output_dir, 'dir'),
+    if ~exist(output_dir, 'dir')
         mkdir(output_dir);
-    end;
+    end
 
     % Initialize the first image after photobleach
     image_0 = imread(strcat(pa,data.first_file));
     temp = imcrop(image_0, data.rectangle); clear image_0;
-    if num_bits ==8, % convert from uint8 to uint16
+    if num_bits ==8 % convert from uint8 to uint16
         image_0 = uint16(double(temp))*2^(16-num_bits);
         %num_bits = 16;
     else % num_bits == 16,
@@ -62,14 +62,14 @@ function data = computer_simulation(data, varargin)
     % dl is probably the boundary condition
     rr = data.rectangle;
 
-    if ~iscell(boundary),
+    if ~iscell(boundary)
         % create mesh with 1 boundary
         mesh = create_mesh(boundary, 'method', 1);
     else % create mesh with multi boundaries
         mesh = create_mesh(boundary, 'method', 2);
         temp = boundary{1}; clear boundary;
         boundary = temp; clear temp;
-    end;
+    end
 
     c_max = 2^16;
     color_bound = [0 c_max-1];
@@ -87,7 +87,7 @@ function data = computer_simulation(data, varargin)
     title('Image Right after Photobleach');
 
 
-    if isfield(data, 'diff_map'),
+    if isfield(data, 'diff_map')
         figure(2);
         set(gcf, 'color', 'w');
         imagesc(data.diff_map); hold on;
@@ -96,7 +96,7 @@ function data = computer_simulation(data, varargin)
         set(gca, 'FontSize', 12, 'FontWeight','bold',...
                  'Box', 'off', 'LineWidth', 1.5);
         title('Initial Triangular Mesh');
-    end;
+    end
 
     % refine mesh
     refine_improve = 2;
@@ -118,9 +118,9 @@ function data = computer_simulation(data, varargin)
     set(gca, 'FontSize', 12, 'FontWeight','bold',...
              'Box', 'off', 'LineWidth', 1.5);
     title('Refined Mesh');
-    if mark_subregion,
+    if mark_subregion
         mark_mesh_subregion(mesh,'handle', h);
-    end;
+    end
 
     % Compute initial solution
     lw = 0.5; % LineWidth
@@ -145,7 +145,7 @@ function data = computer_simulation(data, varargin)
     diff_tag  = data.diff_tag;
 
     % Visualize the diffusion vector diff_coef
-    if isfield(data, 'diff_map'),
+    if isfield(data, 'diff_map')
         figure; set(gcf, 'color', 'w');
         num_nodes = length(mesh.node);
         pdesurf(p_image,tri,(diff_coef)'); hold on;
@@ -155,9 +155,9 @@ function data = computer_simulation(data, varargin)
                  'Box', 'off', 'LineWidth', 1.5);
         title('Diffusion Coefficients Overlaid with Mesh');
         clear mesh;
-    end;
+    end
 
-    if isfield(data, 'diff_map'),
+    if isfield(data, 'diff_map')
         figure; set(gcf, 'color', 'w');
         num_nodes = length(p_image);
         pdesurf(p_image,tri,(diff_coef)'); hold on;
@@ -167,7 +167,7 @@ function data = computer_simulation(data, varargin)
                  'Box', 'off', 'LineWidth', 1.5);
         title('Diffusion Coefficients Overlaid with Refined Mesh');
         clear mesh;
-    end;
+    end
 
     % assemble linear system
     % let the initial solution diffuse for t0 sec
@@ -190,34 +190,34 @@ function data = computer_simulation(data, varargin)
     num_steps = floor(simulation_time/dt); % default = 40;
     show_image = 40;
     u = zeros(length(u_0),num_steps+1);
-    for i=1:num_steps+1,
-        if i ==1,
+    for i=1:num_steps+1
+        if i ==1
             u(:,i) = u_0;
         else
             u(:,i) = simulate_diffusion(u(:,i-1), dt, ...
                 K_diff_coef,M,'method', backward_eular);
-        end;
+        end
 
         % Save images
         file_name = strcat(output_dir, num2str(i), '.tiff');
-        if ((i<=6) || i ==floor(i/show_image)*show_image),
+        if ((i<=6) || i ==floor(i/show_image)*show_image)
             figure;
             i
             set(gcf, 'position', graph_pos, 'color', 'w');
             pdesurf(p_image,tri,u(:,i)); hold on;
 
-            if ~exist(file_name, 'file'),
+            if ~exist(file_name, 'file')
                 cmap = gray;
             else
                 cmap = jet;
-            end;
+            end
 
             view(2); shading interp; colormap(cmap);
             axis(axis_bound); axis off; caxis([0 2^16]);
             set(gca, 'position', [0 0 1 1],'YDir','reverse');
             pause(1);
 
-            if ~exist(file_name, 'file'),
+            if ~exist(file_name, 'file')
 
                 % The print statement is needed for the getframe function
                 print -dbitmap
@@ -228,18 +228,18 @@ function data = computer_simulation(data, varargin)
                 imwrite(im_i,file_name,'tiff','compression','none');
                 clear ff im_i;
 
-            end;
-        end;
+            end
+        end
         clear file_name;
-    end;
+    end
 
     output_file = strcat(output_dir,'simulation_result.mat');
     output_file2 = strcat(output_dir,'mass_stiffness_matrix.mat');
 
-    if save_file,
+    if save_file
         save(output_file, 'u','v_0','M','p','p_image','tri','edge');
         save(output_file2, 'M','K_diff_coef');
-    end;
+    end
 
     figure;
     set(gcf, 'position', graph_pos, 'color', 'w');
@@ -250,7 +250,7 @@ function data = computer_simulation(data, varargin)
     set(gca, 'position', [0 0 1 1],'YDir','reverse');
     clear time;
 
-    if estimate_diffusion,
+    if estimate_diffusion
         % % estimate the diffusion constant
         % % using the last quarter of solution profile.
         % % The Crank-Nicolson Scheme is used for accuracy
@@ -276,10 +276,10 @@ function data = computer_simulation(data, varargin)
         [est_diff_const, ~, ~] = get_diffusion_constant(u1(:,1), u1(:,2),...
                                                         M1, K1, dt);
         display(est_diff_const);
-    end;
+    end
 
     % output for pltmg
-    if save_file,
+    if save_file
 
         vxvyu2u3 = [p' u(:,2:3)];
         num_nodes = size(p,2);   % 11153
@@ -291,15 +291,15 @@ function data = computer_simulation(data, varargin)
         % it is not important in the examples.
         % In the layered problem the 4th columns is the labeling of the
         % subregions.
-        if isfield(data, 'diff_map') && ~isempty(diff_tag),
+        if isfield(data, 'diff_map') && ~isempty(diff_tag)
             itnodes(:,4) = diff_tag;
-        end;
+        end
 
         save(strcat(output_dir,cell_name, '.data'), 'num_nodes','vxvyu2u3',...
             'num_tris', 'itnodes', 'num_edges', 'ibndary','-ascii');
         clear vxvyu2u3 ibndary itnodes;
 
-    end;
+    end
 
 return;
 
@@ -318,11 +318,11 @@ function mark_mesh_subregion(mesh, varargin)
     ee = mesh.edge([1, 2, 7],:)';
     pp = mesh.node';
     mm = 0.5*(pp(ee(:,1),:)+pp(ee(:,2),:));
-    for i = 0:10,
+    for i = 0:10
         ii = (ee(:, 3)==i);
         text(mm(ii,1), mm(ii,2), num2str(i),'color','k');
         clear ii;
-    end;
+    end
 
     mm1 = 0.75*pp(ee(:,1),:)+0.25*pp(ee(:, 2),:);
     mm2 = 0.25*pp(ee(:,1),:)+0.75*pp(ee(:, 2),:);
@@ -332,11 +332,11 @@ function mark_mesh_subregion(mesh, varargin)
 
     % mark triangles
     tt = mesh.tri';
-    for i = 1:8,
+    for i = 1:8
         ii = (tt(:, 4) == i);
         mm = 0.3333*(pp(tt(ii,1),:)+pp(tt(ii,2),:)+pp(tt(ii,3),:));
         text(mm(:,1), mm(:,2), num2str(i), 'color', 'r');
         clear ii mm;
-    end;
+    end
 
 return

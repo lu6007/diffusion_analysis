@@ -89,7 +89,8 @@ function data = init_diffusion_map(cell_name, data, varargin)
             end
             
         case 'layered_diffusion_general'
-            boundary = data.boundary{1}; % outermost boundary of the cell from simulation_get_boundary.m
+            % outermost boundary of the cell from simulation_get_boundary.m
+            boundary = data.boundary{1}; 
             [num_rows, num_cols, ~] = size(data.image_0);
             cell_bw = poly2mask(boundary(:,1), boundary(:,2), num_rows, num_cols);
             % Note 10/13/2014
@@ -99,9 +100,9 @@ function data = init_diffusion_map(cell_name, data, varargin)
             % needed.
 
             % divide into 4 layers 1-4 from outside to inside
-            num_layers = 1;
-
-            [~, label_layer] = divide_layer(cell_bw, num_layers);
+            
+            % num_layers = 1;
+            % [~, label_layer] = divide_layer(cell_bw, num_layers);
             diffusion_map    = zeros(num_rows, num_cols);
 
 %             for i = 1:num_layers
@@ -110,7 +111,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
             for i = 1 : num_rows
               for j = 1 : num_cols
 %                 diffusion_map(i, j) = (label_layer(i, j) == 1) * sqrt((i - num_rows/2)^2 + (j - num_cols/2)^2) * 5 / 250;
-                diffusion_map(i, j) = (label_layer(i, j) == 1) * sqrt((i - num_rows/2)^2 + (j - num_cols/2)^2);
+                diffusion_map(i, j) = cell_bw(i,j) * sqrt((i - num_rows/2)^2 + (j - num_cols/2)^2);
               end
             end
 

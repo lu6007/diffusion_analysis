@@ -239,6 +239,37 @@ function data = computer_simulation(data, varargin)
     if save_file
         save(output_file, 'u','v_0','M','p','p_image','tri','edge');
         save(output_file2, 'M','K_diff_coef');
+
+        % output for pltmg
+        vxvyu2u3 = [p' u(:,2:3)];
+        num_nodes = size(p,2);   % 11153
+        num_tris = size(tri,2);  % 21888
+        itnodes = tri';          % num_tris x 4
+        num_edges = size(edge,2);
+        ibndary = edge([1 2 7],:)'; % num_edges x 3
+        % The 4th column of itnodes marks the region of photobleach
+        % it is not important in the examples.
+        % In the layered problem the 4th columns is the labeling of the
+        % subregions.
+        if isfield(data, 'diff_map') && ~isempty(diff_tag)
+            itnodes(:,4) = diff_tag;
+        end
+
+%        if ~strcmp(cell_name, 'layered_diffusion_general')
+        save(strcat(output_dir,cell_name, '.data'), 'num_nodes','vxvyu2u3',...
+            'num_tris', 'itnodes', 'num_edges', 'ibndary','-ascii');
+%         else
+%             u1 = u(:, 1);
+%             u2 = u(:, 2);
+%             num_para = size(unique(tri(4, :)), 2);
+%             diff_map = data.diff_map;
+%             save(strcat(output_dir,'layered_diffusion_general_5_refined.mat'), 'p_image', 'tri', ...
+%                 'edge', 'u', 'diff_map', 'dt', 'cell_name', 'num_nodes', 'num_para', ...
+%                 'u1', 'u2');
+%             clear u1 u2 num_para diff_map; 
+% 
+%         end
+        clear vxvyu2u3 ibndary itnodes;
     end
 
     figure;
@@ -276,29 +307,6 @@ function data = computer_simulation(data, varargin)
         [est_diff_const, ~, ~] = get_diffusion_constant(u1(:,1), u1(:,2),...
                                                         M1, K1, dt);
         display(est_diff_const);
-    end
-
-    % output for pltmg
-    if save_file
-
-        vxvyu2u3 = [p' u(:,2:3)];
-        num_nodes = size(p,2);   % 11153
-        num_tris = size(tri,2);  % 21888
-        itnodes = tri';          % num_tris x 4
-        num_edges = size(edge,2);
-        ibndary = edge([1 2 7],:)'; % num_edges x 3
-        % The 4th column of itnodes marks the region of photobleach
-        % it is not important in the examples.
-        % In the layered problem the 4th columns is the labeling of the
-        % subregions.
-        if isfield(data, 'diff_map') && ~isempty(diff_tag)
-            itnodes(:,4) = diff_tag;
-        end
-
-        save(strcat(output_dir,cell_name, '.data'), 'num_nodes','vxvyu2u3',...
-            'num_tris', 'itnodes', 'num_edges', 'ibndary','-ascii');
-        clear vxvyu2u3 ibndary itnodes;
-
     end
 
 return;

@@ -7,7 +7,7 @@ function [diff_const, est_u2, R, r] = ...
     get_diffusion_constant(u1,u2,M,K,dt, is_boundary)
 
 need_gate = 0;
-if nargin == 5,
+if nargin == 5
     % set r to []
     r = [];
     % draw_figure = 0;
@@ -24,35 +24,35 @@ if nargin == 5,
     % apply a gate for including data points
     % The gate is a polygon with 4 nodes.
     % Only the data inside the gate is used for analysis.
-    if need_gate,
+    if need_gate
         figure; plot(Mdu, laplace ,'b+'); hold on;
         title('Please choose 4 points (counterclockwise) to define a selection gate');
         nn = 4;
         xx = zeros(nn+1,1); yy = zeros(nn+1,1);
-        for i = 1:nn,
+        for i = 1:nn
             [xx(i), yy(i)] = ginput(1);
-            if i == 1,
+            if i == 1
                 plot(xx(i), yy(i), 'ro');
             else % i>1
                 plot(xx(i-1:i), yy(i-1:i), 'r-', 'LineWidth', 0.5);
-            end;
+            end
         end
         xx(nn+1) = xx(1); yy(nn+1) = yy(1);
         plot(xx(nn:nn+1), yy(nn:nn+1), 'r-','LineWidth', 0.5);
         normal = zeros(length(Mdu), nn);
         index = true(length(Mdu), 1);
-        for i = 1:nn,
+        for i = 1:nn
             % Mdu - x; laplace - y
             % The cross product of (x-xi, y-yi) and (xi+1-xi, yi+1-yi)  has
             % only a z component normal, which is negative for all lines 
             % if (x,y) is inside of the polygon. 
             normal(:,i) = (Mdu-xx(i))*(yy(i+1)-yy(i))-(laplace-yy(i))*(xx(i+1)-xx(i));
             index = index & (normal(:,i)<0);
-        end;
+        end
         % figure; plot(Mdu(index), laplace(index), 'b+');
         temp = Mdu(index); clear Mdu; Mdu = temp; 
         temp = laplace(index); clear laplace; laplace = temp;
-    end;
+    end
     
     %
     one_over_D = Mdu\laplace;
@@ -64,11 +64,11 @@ if nargin == 5,
     [x,y] = average_data(Mdu, laplace);
     [R_matrix,~] = corrcoef(x,y);
     R = R_matrix(1,2);
-elseif nargin == 6,
+elseif nargin == 6
     % use the 2nd method which utilize the bounary information
     [diff_const, est_u2, R, r] = ...
         get_diffusion_constant_2(u1, u2, M, K, dt, is_boundary);
-end;
+end
 return;
 
 % estimate_diffusion_coefficient

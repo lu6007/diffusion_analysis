@@ -106,21 +106,21 @@ dx = (max_x-min_x)/num_intervals;
 new_x = zeros(num_intervals, 1);
 new_y = zeros(num_intervals, 1);
 has_data = ones(num_intervals, 1);
-for i = 1:num_intervals,
+for i = 1:num_intervals
     is_interval = ((x>=min_x+(i-1)*dx) & (x<min_x+i*dx));
-    if i == num_intervals,
+    if i == num_intervals
         is_interval = is_interval+ (x==max_x);
-    end;
+    end
     n_int = sum(is_interval);
-    if n_int ==0,
+    if n_int ==0
         has_data(i) = 0;
         continue;
-    end;
+    end
     x_int = x.* is_interval;
     new_x(i) = sum(x_int)/n_int;
     y_int = y.*is_interval;
     new_y(i) = sum(y_int)/n_int;
-end;
+end
 
 old_x = new_x; 
 old_y = new_y;
@@ -128,10 +128,13 @@ num_data_points = num_intervals - sum(~has_data);
 new_x = zeros(num_data_points,1);
 new_y = zeros(num_data_points,1);
 j = 1;
-for i = 1:num_intervals;
-    if(has_data(i)),
+for i = 1:num_intervals
+    if(has_data(i))
         new_x(j) = old_x(i);
         new_y(j) = old_y(i);
         j = j+1;
-    end;
-end;
+    end
+end
+
+return;
+

@@ -236,10 +236,11 @@ temp = con(:,:,1, first_frame_after);
 
 boundary_file = strcat(data.output_path,'smaller_boundary.mat');
 title_str = 'Please selected smaller boundary';
-[~, bd_t]= get_polygon(temp, boundary_file,title_str);
+[~, bd_t]= get_polygon(temp, boundary_file,title_str, 'show_colorbar', 1, ...
+    'cbound', [0.5, 0.98]);
 % swap two rows in smaller_boundary in concentration_to_vector
 smaller_boundary = bd_t{1}; %[bd_t{1}(:,2) bd_t{1}(:,1)];
-display('Got the polygon, and continue...');
+fprintf('Got the polygon, and continue...\n');
 clear bw_t bd_t temp;
 
 %
@@ -263,7 +264,7 @@ hold on; pdemesh(p_image,edge,tri); colorbar;
 
 % convert concentration to solution vector
 num_nodes = size(p_image,2);
-fprintf('num_nodes = %d', num_nodes);
+fprintf('num_nodes = %d\n', num_nodes);
 num_steps = length(index_after);
 u = zeros(num_nodes,num_steps);
 est_u = zeros(num_nodes,num_steps);
@@ -282,7 +283,7 @@ end
 
 
 % estimate diffusion constant
-fprintf('%30s%20s%20s%20s',...
+fprintf('%30s%20s%20s%20s\n',...
     'diffusion coef (um^2/sec)', 'residual_1', 'residual_2','R value');
 diff_const = zeros(num_steps-1,1);
 for i= 1:num_steps-1
@@ -298,15 +299,16 @@ for i= 1:num_steps-1
         norm(u(:,i+1),2);
     relative_residual_norm_2 = norm(u(:,i+1)-est_u(:,i+1),2)/...
         norm(u(:,i+1)-u_i);
-    fprintf('%34.4f%30.4f%20.4f%20.4f', diff_const(i)/60, ...
+    fprintf('%34.4f%30.4f%20.4f%20.4f\n', diff_const(i)/60, ...
         relative_residual_norm, relative_residual_norm_2, R);
 end
 
 show_figure_result = 1;
+nn = 1; % the nnth diffusion coefficient is the best
 if show_figure_result
     %cbound = [0.5, 1.1];
     s = max(p_image)-min(p_image);
-    for i = 1:2
+    for i = nn:nn+1
         h = figure; 
         pdesurf(p_image,tri,u(:,i));
         view(90,90); caxis(cbound); colorbar;
@@ -316,18 +318,20 @@ if show_figure_result
 %         saveas(h,sprintf('%su_%d.fig',path,i+starting_step));
 %         saveas(h,sprintf('%su_%d.png',path,i+starting_step));
     end
-    for i =2:2
+    
+    for i =nn:nn
         h = figure;
-        pdesurf(p_image,tri,est_u(:,i));
+        pdesurf(p_image,tri,est_u(:,i+1));
         view(90,90); colormap jet; caxis(cbound); colorbar;
         set(gca, 'FontSize', 16);
         title('Estimated concentration map'); 
+        colormap jet; 
 %         saveas(h,sprintf('%sest_u_%d.fig',path,i+starting_step));
 %         saveas(h,sprintf('%sest_u_%d.png',path,i+starting_step));
     end
 
     error = zeros(size(u));
-    for i = 1:1
+    for i = nn:nn
        %  error(:,i+1) = (u(:,i+1)-est_u(:,i+1))/abs(diff_const(i))/dt;
         error(:,i+1) = (u(:,i+1)-est_u(:,i+1))/norm(u(:,i+1)-u(:,i)*pb_factor);
     end
@@ -335,18 +339,33 @@ if show_figure_result
 %         [R,P]=corrcoef(error(:,i), error(:,i+1))
 %     end;
 
-    cbound = [-0.005, 0.02];
-    for i = 1:1
+    error_bound = [-0.005, 0.02];
+    %error_bound = [0, 0.5]; 
+    for i = nn:nn
+        figure; 
+        pdesurf(p_image,tri,u(:,i+1)-u(:,i));
+        view(90,90); caxis(error_bound); colorbar;
+        set(gca, 'FontSize', 16);
+        title(strcat('Change of concentration map ', num2str(i))); 
+        colormap jet;
+        %
+        figure; 
+        pdesurf(p_image,tri,est_u(:,i+1)-u(:,i));
+        view(90,90); caxis(error_bound); colorbar;
+        set(gca, 'FontSize', 16);
+        title(strcat('Estimated Change of concentration map ', num2str(i))); 
+        colormap jet;
+        %
         h = figure; 
         pdesurf(p_image,tri, abs(error(:,i+1)));
-        view(90,90); colormap jet; caxis(cbound);colorbar;
+        view(90,90); colormap jet; caxis(error_bound);colorbar;
         set(gca, 'FontSize', 16);
         title('abs(u - est u) '); 
 %         saveas(h,sprintf('%sabs_diff_u_%d_est_u_%d.fig',path,i+1,i+1));
 %         saveas(h,sprintf('%sabs_diff_u_%d_est_u_%d.png',path,i+1,i+1));
     end
 
-    for i = 1:1
+    for i = nn:nn
         [h1, h2] = plot_Mdu_dtKu_residual(diff_const(i), u(:,i)*pb_factor, u(:,i+1), M, K, dt);
 %         saveas(h1, sprintf('%sMdu_dtKu_%d.fig', path, i+starting_step));
 %         saveas(h1, sprintf('%sMdu_dtKu_%d.png', path, i+starting_step));

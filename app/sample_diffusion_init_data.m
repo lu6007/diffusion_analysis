@@ -4,8 +4,8 @@
 % Copyright: Shaoying Lu and Yingxiao Wang 2014
 function data = sample_diffusion_init_data(cell_name)
     % root = 'D:/sof/data/diffusion_sample/';
-    root = '~/Desktop/for_yiwen/diffusion_data/';
-%     root = '/Users/kathylu/Documents/sof/data/diffusion_sample/';
+    % root = '/Users/Yiwen/Desktop/for_yiwen/diffusion_data/diffusion/';
+    root = '/Users/kathylu/Documents/sof/data/diffusion_sample/';
     data.cell_name = cell_name;
     switch cell_name
         case 'test'
@@ -87,6 +87,8 @@ function data = sample_diffusion_init_data(cell_name)
             
         case 'layered_diffusion_general'
             data.path = strcat(root,'simulation/layered_diffusion_general/');
+            % The diffusion map is calculated in src/sim/init_diffusion_map.m for the same case name.
+            % Why are these diffusion coefficients needed? 
             data.diff_const = [5.0 20.0 30.0 1.0]; % mu m^2/s from outside to inside 
             data.first_file = 'cell_after_photobleach.PNG';
             image_before = imread(strcat(data.path, 'cell_before_photobleach.PNG'));

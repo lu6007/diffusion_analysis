@@ -93,24 +93,12 @@ function data = init_diffusion_map(cell_name, data, varargin)
             boundary = data.boundary{1}; 
             [num_rows, num_cols, ~] = size(data.image_0);
             cell_bw = poly2mask(boundary(:,1), boundary(:,2), num_rows, num_cols);
-            % Note 10/13/2014
-            % The centroid of 1 triangle falls out of cell_bw
-            % The resulting diffusion tag has a zero value in that triangle
-            % The can be fixed by dilating cell_bw for a few pixels if
-            % needed.
-
-            % divide into 4 layers 1-4 from outside to inside
-            
-            % num_layers = 1;
-            % [~, label_layer] = divide_layer(cell_bw, num_layers);
-            diffusion_map    = zeros(num_rows, num_cols);
-
-%             for i = 1:num_layers
-%                  diffusion_map = diffusion_map + (label_layer==i) * diff_const(i);
-%             end;
+            % The diffusion map is a function of the spatial variables i
+            % and j. 
+            diffusion_map = zeros(num_rows, num_cols);
             for i = 1 : num_rows
               for j = 1 : num_cols
-%                 diffusion_map(i, j) = (label_layer(i, j) == 1) * sqrt((i - num_rows/2)^2 + (j - num_cols/2)^2) * 5 / 250;
+%               diffusion_map(i, j) = (label_layer(i, j) == 1) * sqrt((i - num_rows/2)^2 + (j - num_cols/2)^2) * 5 / 250;
                 diffusion_map(i, j) = cell_bw(i,j) * sqrt((i - num_rows/2)^2 + (j - num_cols/2)^2);
               end
             end

@@ -89,7 +89,7 @@ function data = sample_diffusion_init_data(cell_name)
             data.path = strcat(root,'simulation/layered_diffusion_general/');
             % The diffusion map is calculated in src/sim/init_diffusion_map.m for the same case name.
             % Why are these diffusion coefficients needed? 
-            data.diff_const = [5.0 20.0 30.0 1.0]; % mu m^2/s from outside to inside 
+            data.diff_const = [0 0 0 0]; % place holder, value not needed 
             data.first_file = 'cell_after_photobleach.PNG';
             image_before = imread(strcat(data.path, 'cell_before_photobleach.PNG'));
             rectangle_file = strcat(data.path, 'image_rectangle.data');

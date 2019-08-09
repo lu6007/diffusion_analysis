@@ -174,7 +174,11 @@ function data = computer_simulation(data, varargin)
     % so that it smoothes out at boundary;
     % [K M] = assemble_matrix(p, tri);
     [K_diff_coef, M] = assemble_matrix(p, tri, 'diff_coef', diff_coef');
-    t0 = 2.9/mean(diff_const);
+    if ~strcmp(data.cell_name, 'layered_diffusion_general')
+        t0 = 2.9/mean(diff_const); 
+    else 
+        t0 = 30/max(diff_coef);
+    end
     backward_eular= 2;
     u_0 = simulate_diffusion(v_0, t0, K_diff_coef,M,'method', backward_eular);
 

@@ -16,7 +16,7 @@
 % 'photobleach_cell_2', 'square_5_circle', 'layered_diffusion',
 % 'tensor_diffusion', etc
 
-% Copyright: Shaoying Lu and Yingxiao Wang 2012-2016
+% Copyright: Shaoying Lu and Yingxiao Wang 2012-2016, shaoying.lu@gmail.com
 function data = computer_simulation(data, varargin)
     parameter_name = {'load_file', 'save_file','dt', 'estimate_diffusion', 'mark_subregion',...
         'simulation_time'}; % simulation_time in seconds

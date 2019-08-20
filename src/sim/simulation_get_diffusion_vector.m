@@ -4,7 +4,7 @@
 
 % Copyright: Shaoying Lu and Yingxiao Wang 2016
 function data = simulation_get_diffusion_vector(cell_name, data, tri4)
-num_tris = size(tri4, 2);
+    num_tris = size(tri4, 2);
     if isfield(data, 'diff_coef')
         diff_coef = data.diff_coef;
         diff_tag = [];
@@ -82,24 +82,28 @@ num_tris = size(tri4, 2);
                      + 3*double(diff_coef(:,1)>215-128);
 
                
-        elseif ~strcmp(cell_name, 'tensor_diffusion') && ~strcmp(cell_name, 'tensor_cross')
+        % elseif ~strcmp(cell_name, 'tensor_diffusion') && ~strcmp(cell_name, 'tensor_cross')
+        elseif strcmp(cell_name, 'layered_diffusion_general') % need to test 'layered_diffusion'
             diff_coef = concentration_to_vector(data.diff_map(:,:,1),[tc(2,:); tc(1,:)],...
                                                 'method',1,'interp','nearest');
-            num_diff_const = length(data.diff_const);
-            diff_tag = zeros(length(diff_coef),1);
-            tagged = logical(size(diff_tag));
-
-            for i = 1:num_diff_const
-                temp = (diff_coef == data.diff_const(i));
-                diff_tag(temp) = i;
-                tagged(temp) = true;
-                clear temp;
-            end
-            % assign non-tagged triangles to region 1 
-            % 1 - the outside region for layered diffusion
-            diff_tag(~tagged) = 1; 
-            % spot diffusion: diff_tag =1 - in the spots; 2 - in the cell
-            % layered diffusion: diff_tag = i - in layer i, 1<= i <= 4.
+            diff_tag = zeros(size(diff_coef)); 
+%             num_diff_const = length(data.diff_const);
+%             diff_tag = zeros(num_diff_const,1);
+%             tagged = logical(size(diff_tag));
+% 
+%             for i = 1:num_diff_const
+%                 temp = (diff_coef == data.diff_const(i));
+%                 diff_tag(temp) = i;
+%                 tagged(temp) = true;
+%                 clear temp;
+%             end
+%             % assign non-tagged triangles to region 1 
+%             % 1 - the outside region for layered diffusion
+%             diff_tag(~tagged) = 1; 
+%             % spot diffusion: diff_tag =1 - in the spots; 2 - in the cell
+%             % layered diffusion: diff_tag = i - in layer i, 1<= i <= 4.
+        else
+            fprintf('\nFunction simulation_get_diffusion_vector(): incorrect cell_name! --- \n\n');
         end % if strcmp(cell_name, 'layered_diffusion'),
         clear tc;
 

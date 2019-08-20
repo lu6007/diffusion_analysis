@@ -95,7 +95,7 @@ function data = computer_simulation(data, varargin)
         view(2); axis ij;
         set(gca, 'FontSize', 12, 'FontWeight','bold',...
                  'Box', 'off', 'LineWidth', 1.5);
-        title('Initial Triangular Mesh');
+        title('Initial Triangular Mesh Overlaid with Diff Map');
     end
 
     % refine mesh
@@ -105,7 +105,7 @@ function data = computer_simulation(data, varargin)
     % matrix, not the row-index and col-index in the matrix.
     p_image = new_mesh.node; edge = new_mesh.edge; tri = new_mesh.tri;
     dl = new_mesh.dl;
-    clear new_mesh;
+    new_mesh;
     mag = data.mag;
     p = scale_by_magnification(p_image,mag);
 
@@ -145,29 +145,19 @@ function data = computer_simulation(data, varargin)
     diff_tag  = data.diff_tag;
 
     % Visualize the diffusion vector diff_coef
+    dfun = diffusion_function();
+    surf.p = p_image; surf.tri = tri;  
     if isfield(data, 'diff_map')
-        figure; set(gcf, 'color', 'w');
-        num_nodes = length(mesh.node);
-        pdesurf(p_image,tri,(diff_coef)'); hold on;
-        pdemesh(mesh.node,mesh.edge,mesh.tri, (max(max(diff_coef))+1)*ones(1,num_nodes));
-        view(2); axis ij;
-        set(gca, 'FontSize', 12, 'FontWeight','bold',...
-                 'Box', 'off', 'LineWidth', 1.5);
+        surf.u = diff_coef; 
+        figure; % 5
+        dfun.draw_surface_with_mesh(surf, mesh);
         title('Diffusion Coefficients Overlaid with Mesh');
-        clear mesh;
-    end
-
-    if isfield(data, 'diff_map')
-        figure; set(gcf, 'color', 'w');
-        num_nodes = length(p_image);
-        pdesurf(p_image,tri,(diff_coef)'); hold on;
-        pdemesh(p_image,edge,tri, (max(max(diff_coef))+1)*ones(1,num_nodes));
-        view(2); axis ij;
-        set(gca, 'FontSize', 12, 'FontWeight','bold',...
-                 'Box', 'off', 'LineWidth', 1.5);
+        % 
+        figure; % 6
+        dfun.draw_surface_with_mesh(surf, new_mesh); 
         title('Diffusion Coefficients Overlaid with Refined Mesh');
-        clear mesh;
     end
+    clear mesh new_mesh
 
     % assemble linear system
     % let the initial solution diffuse for t0 sec
@@ -179,6 +169,7 @@ function data = computer_simulation(data, varargin)
     else 
         t0 = 30/max(diff_coef);
     end
+    fprintf('\nFunction computer_simulation(): t0 = %E ------ \n', t0);
     backward_eular= 2;
     u_0 = simulate_diffusion(v_0, t0, K_diff_coef,M,'method', backward_eular);
 
@@ -186,7 +177,7 @@ function data = computer_simulation(data, varargin)
     % until the solution converges
     % using the backward Eular method
     % For better format, use str_1 = sprintf(...); display(str_1);
-    display(dt);
+    fprintf('Function computer_simulation(): dt = %E ------ \n', dt);
 
     % simulate diffusion for <= 30 seconds
     % until the fluorescence recovery stops.
@@ -205,8 +196,8 @@ function data = computer_simulation(data, varargin)
         % Save images
         file_name = strcat(output_dir, num2str(i), '.tiff');
         if ((i<=6) || i ==floor(i/show_image)*show_image)
+            fprintf('\ni=%d\n', i);
             figure;
-            i
             set(gcf, 'position', graph_pos, 'color', 'w');
             pdesurf(p_image,tri,u(:,i)); hold on;
 
@@ -259,20 +250,20 @@ function data = computer_simulation(data, varargin)
             itnodes(:,4) = diff_tag;
         end
 
-%        if ~strcmp(cell_name, 'layered_diffusion_general')
-        save(strcat(output_dir,cell_name, '.data'), 'num_nodes','vxvyu2u3',...
-            'num_tris', 'itnodes', 'num_edges', 'ibndary','-ascii');
-%         else
-%             u1 = u(:, 1);
-%             u2 = u(:, 2);
-%             num_para = size(unique(tri(4, :)), 2);
-%             diff_map = data.diff_map;
-%             save(strcat(output_dir,'layered_diffusion_general_5_refined.mat'), 'p_image', 'tri', ...
-%                 'edge', 'u', 'diff_map', 'dt', 'cell_name', 'num_nodes', 'num_para', ...
-%                 'u1', 'u2');
-%             clear u1 u2 num_para diff_map; 
-% 
-%         end
+        if ~strcmp(cell_name, 'layered_diffusion_general')
+            save(strcat(output_dir,cell_name, '.data'), 'num_nodes','vxvyu2u3',...
+                'num_tris', 'itnodes', 'num_edges', 'ibndary','-ascii');
+        else
+            u1 = u(:, 1);
+            u2 = u(:, 2);
+            num_para = size(unique(tri(4, :)), 2);
+            diff_map = data.diff_map;
+            save(strcat(output_dir,'general_diffusion.mat'), 'p_image', 'tri', ...
+                'edge', 'u', 'diff_map', 'dt', 'cell_name', 'num_nodes', 'num_para', ...
+                'u1', 'u2');
+            clear u1 u2 num_para diff_map; 
+
+        end
         clear vxvyu2u3 ibndary itnodes;
     end
 

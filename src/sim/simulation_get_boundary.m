@@ -43,9 +43,6 @@ function boundary = simulation_get_boundary(name, data, varargin)
                         clear bd;
                     end
 
-%                 case 'layered_diffusion_general'
-%                     boundary(2) = [];
-
                 case 'spot_diffusion'
                     bd = bwboundaries(data.diff_map == data.diff_const(2), 4, 'noholes');
                     num_subregions = length(bd)+1;
@@ -171,7 +168,7 @@ function boundary = simulation_get_boundary(name, data, varargin)
                             rr(3)*ones(n,1), rt, ...
                             rt(2:n-1), ones(n-2,1)];
             case {'photobleach_cell', 'layered_diffusion', 'spot_diffusion', ...
-                    'tensor_diffusion', 'tensor_cross_2', 'test', 'layered_diffusion_general'}
+                    'tensor_diffusion', 'tensor_cross_2', 'test', 'general_diffusion'}
                 boundary = init_boundary(data); 
         end
         save(boundary_file, 'boundary');

@@ -88,7 +88,7 @@ function data = init_diffusion_map(cell_name, data, varargin)
                 imwrite(data.diff_map, data.diffusion_map_file, 'tiff');
             end
             
-        case 'layered_diffusion_general'
+        case 'general_diffusion'
             % outermost boundary of the cell from simulation_get_boundary.m
             boundary = data.boundary{1}; 
             [num_rows, num_cols, ~] = size(data.image_0);

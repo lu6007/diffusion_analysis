@@ -82,8 +82,7 @@ function data = simulation_get_diffusion_vector(cell_name, data, tri4)
                      + 3*double(diff_coef(:,1)>215-128);
 
                
-        % elseif ~strcmp(cell_name, 'tensor_diffusion') && ~strcmp(cell_name, 'tensor_cross')
-        elseif strcmp(cell_name, 'layered_diffusion_general') % need to test 'layered_diffusion'
+        elseif strcmp(cell_name, 'general_diffusion') % need to test 'layered_diffusion'
             diff_coef = concentration_to_vector(data.diff_map(:,:,1),[tc(2,:); tc(1,:)],...
                                                 'method',1,'interp','nearest');
             diff_tag = zeros(size(diff_coef)); 

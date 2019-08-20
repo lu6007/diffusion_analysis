@@ -85,8 +85,8 @@ function data = sample_diffusion_init_data(cell_name)
             % estimate the diffusion coefficient from the simulation
             data.dt = 0.25;
             
-        case 'layered_diffusion_general'
-            data.path = strcat(root,'simulation/layered_diffusion_general/');
+        case 'general_diffusion'
+            data.path = strcat(root,'simulation/general_diffusion/');
             % The diffusion map is calculated in src/sim/init_diffusion_map.m for the same case name.
             % Why are these diffusion coefficients needed? 
             data.diff_const = [0 0 0 0]; % place holder, value not needed 

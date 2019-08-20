@@ -105,7 +105,7 @@ function data = computer_simulation(data, varargin)
     % matrix, not the row-index and col-index in the matrix.
     p_image = new_mesh.node; edge = new_mesh.edge; tri = new_mesh.tri;
     dl = new_mesh.dl;
-    new_mesh;
+    % new_mesh;
     mag = data.mag;
     p = scale_by_magnification(p_image,mag);
 
@@ -148,23 +148,23 @@ function data = computer_simulation(data, varargin)
     dfun = diffusion_function();
     surf.p = p_image; surf.tri = tri;  
     if isfield(data, 'diff_map')
-        surf.u = diff_coef; 
+        surf.u = diff_coef'; 
         figure; % 5
-        dfun.draw_surface_with_mesh(surf, mesh);
+        dfun.draw_surface(surf, 'mesh', mesh);
         title('Diffusion Coefficients Overlaid with Mesh');
         % 
         figure; % 6
-        dfun.draw_surface_with_mesh(surf, new_mesh); 
+        dfun.draw_surface(surf, 'mesh', new_mesh); 
         title('Diffusion Coefficients Overlaid with Refined Mesh');
     end
-    clear mesh new_mesh
+    clear mesh; 
 
     % assemble linear system
     % let the initial solution diffuse for t0 sec
     % so that it smoothes out at boundary;
     % [K M] = assemble_matrix(p, tri);
     [K_diff_coef, M] = assemble_matrix(p, tri, 'diff_coef', diff_coef');
-    if ~strcmp(data.cell_name, 'layered_diffusion_general')
+    if ~strcmp(data.cell_name, 'general_diffusion')
         t0 = 2.9/mean(diff_const); 
     else 
         t0 = 30/max(diff_coef);
@@ -182,12 +182,15 @@ function data = computer_simulation(data, varargin)
     % simulate diffusion for <= 30 seconds
     % until the fluorescence recovery stops.
     % Compute fluorescence recovery curve.
-    num_steps = floor(simulation_time/dt); % default = 40;
+    num_step = floor(simulation_time/dt); % default = 40;
     show_image = 40;
-    u = zeros(length(u_0),num_steps+1);
-    for i=1:num_steps+1
+    u = zeros(length(u_0),num_step+1);
+    for i=1:num_step+1
         if i ==1
             u(:,i) = u_0;
+            surf.u = u(:, i); 
+            figure; dfun.draw_surface(surf, 'mesh', new_mesh); 
+            title('u_1 with mesh'); 
         else
             u(:,i) = simulate_diffusion(u(:,i-1), dt, ...
                 K_diff_coef,M,'method', backward_eular);
@@ -200,7 +203,6 @@ function data = computer_simulation(data, varargin)
             figure;
             set(gcf, 'position', graph_pos, 'color', 'w');
             pdesurf(p_image,tri,u(:,i)); hold on;
-
             if ~exist(file_name, 'file')
                 cmap = gray;
             else
@@ -227,6 +229,7 @@ function data = computer_simulation(data, varargin)
         end
         clear file_name;
     end
+    clear new_mesh; 
 
     output_file = strcat(output_dir,'simulation_result.mat');
     output_file2 = strcat(output_dir,'mass_stiffness_matrix.mat');
@@ -250,7 +253,7 @@ function data = computer_simulation(data, varargin)
             itnodes(:,4) = diff_tag;
         end
 
-        if ~strcmp(cell_name, 'layered_diffusion_general')
+        if ~strcmp(cell_name, 'general_diffusion')
             save(strcat(output_dir,cell_name, '.data'), 'num_nodes','vxvyu2u3',...
                 'num_tris', 'itnodes', 'num_edges', 'ibndary','-ascii');
         else
@@ -280,10 +283,10 @@ function data = computer_simulation(data, varargin)
         % % estimate the diffusion constant
         % % using the last quarter of solution profile.
         % % The Crank-Nicolson Scheme is used for accuracy
-        % i_0 = floor(0.75*num_steps);
+        % i_0 = floor(0.75*num_step);
         % drive = -dt*K*0.5*(u(:,i_0)+u(:,i_0+1));
         % Mdu = M*(u(:,i_0+1)-u(:,i_0));
-        % for i= i_0+1:num_steps-1,
+        % for i= i_0+1:num_step-1,
         %     drive = [drive; -dt*K*0.5*(u(:,i)+u(:,i+1))];
         %     Mdu = [Mdu; M*(u(:,i+1)-u(:,i))];
         % end;

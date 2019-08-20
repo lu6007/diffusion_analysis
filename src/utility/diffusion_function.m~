@@ -2,10 +2,7 @@
 %     fh.draw_surface_with_mesh = @draw_surface_with_mesh;
 %     fh.adjust_time_step = @adjust_time_step; 
 %
-% function draw_surface(surf, varargin)
-%     para_name = {'with_mesh', 'mesh'};
-%     default = {0, []};
-% Surface and mesh takes the default row vector format. 
+% function draw_surface_with_mesh(surf, mesh)
 %
 % function [G, time_stepping] = ...
 %    adjust_time_stepping(diff_const,dt,u_0,M,K)
@@ -15,24 +12,22 @@
 
 % Copyright: Shaoying Lu and Yingxiao Wang, Email: shaoying.lu@gmail.com
 function fh = diffusion_function()
-    fh.draw_surface = @draw_surface;
+    fh.draw_surface_with_mesh = @draw_surface_with_mesh;
     fh.adjust_time_step = @adjust_time_step; 
 return
 
-function draw_surface(surf, varargin)
-    para_name = {'mesh'};
-    default = {[]};
-    mesh = parse_parameter(para_name, default, varargin);
+function draw_surface_with_mesh(surf, mesh)
     set(gcf, 'color', 'w');
     %
+    p = surf.p; tri = surf.tri;
     u = surf.u; 
-    pdesurf(surf.p,surf.tri,u); 
+    pdesurf(p', tri', u'); hold on;
+    clear p tri u; 
     %
-    if ~isempty(mesh)
-        hold on;
-        num_node = length(mesh.node);
-        pdemesh(mesh.node, mesh.edge, mesh.tri, (max(max(u))+1)*ones(1,num_node));
-    end
+    num_node = length(mesh.node);
+    p = mesh.node; edge = mesh.edge; tri = mesh.tri;
+    u = (max(max(u))+1)*ones(1,num_node)
+    pdemesh(mesh.node, mesh.edge, mesh.tri, (max(max(u))+1)*ones(1,num_node));
     view(2); axis ij; colormap jet; 
     set(gca, 'FontSize', 12, 'FontWeight','bold',...
              'Box', 'off', 'LineWidth', 1.5);

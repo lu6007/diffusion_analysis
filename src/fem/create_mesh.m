@@ -14,7 +14,7 @@ function mesh = create_mesh(boundary, varargin)
     method = parse_parameter(para_name, default_v, varargin);
 
     % create the geometric description and the initial mesh
-    switch method,
+    switch method
         case 1
             % method 1 --- create mesh using 1 boundary
             polygon =2; 
@@ -25,7 +25,7 @@ function mesh = create_mesh(boundary, varargin)
                 num_nodes = num_nodes-1;
             else
                 new_boundary = boundary;
-            end;
+            end
             gd = [polygon; num_nodes; new_boundary(:,1); new_boundary(:,2)];
             mesh.dl = decsg(gd);
             [temp,mesh.edge,mesh.tri] = initmesh(mesh.dl);
@@ -35,7 +35,7 @@ function mesh = create_mesh(boundary, varargin)
             % Require the boundary to be clockwise and closed.
             mesh = create_mesh_2(boundary);
             temp = mesh.node;
-    end;
+    end
 
     % draw image and plot initial mesh
     % handle=figure; pdemesh(p_image,edge,tri);
@@ -58,13 +58,13 @@ function mesh = create_mesh_2(boundary)
     num_boundary = length(boundary);
     % num_boundary = 2;
     n_boundary = zeros(num_boundary,1);
-    for i = 1:num_boundary,
+    for i = 1:num_boundary
         n_boundary(i) = length(boundary{i});
-    end;
+    end
     max_n = max(n_boundary);
     gd = zeros(2*max_n, num_boundary);
     polygon = 2;
-    for i = 1:num_boundary,
+    for i = 1:num_boundary
         nn = n_boundary(i) - 1;
         x = floor(boundary{i}(1:nn,1)+0.5); y = floor(boundary{i}(1:nn,2)+0.5);
         % % Make the boundaries convex if needed.
@@ -74,7 +74,7 @@ function mesh = create_mesh_2(boundary)
         % gd(1:2*(nn+1), i) = [polygon; nn; x(index(nn:-1:1)); y(index(nn:-1:1))]; 
         % clear index;
       gd(1:2*(nn+1), i) = [polygon; nn; x; y];
-    end;
+    end
     mesh.dl = decsg(gd);
     
     % gd - geometric description

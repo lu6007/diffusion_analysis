@@ -43,50 +43,50 @@ function create_concentration_map(cell_name,starting_step)
     % read and crop the image files
     image_0_array = ...
         get_cropped_image_array(path,prefix,start_0,end_0);
-    for i = 1:end_0-start_0+1,
+    for i = 1:end_0-start_0+1
         image_0_array(:,:,1,i) = ...
             region_wiener2(image_0_array(:,:,1,i),nhood,bw);
-    end;
+    end
     image_0_filtered = median(image_0_array,dimension);
     clear image_0_array ;
     image_0_filtered = image_0_filtered + im2uint16(~bw);
     image_array = ...
         get_cropped_image_array(path,prefix,end_0+shift,...
         end_0+shift+num_images-1);
-    for i = 1:num_images,
+    for i = 1:num_images
         image_array(:,:,1,i) = ...
             region_wiener2(image_array(:,:,1,i),nhood,bw);
-    end;
+    end
 
     % convert images to concentration map
     con = zeros(size(image_array));
-    for i = 1:num_images,
+    for i = 1:num_images
         con(:,:,:,i) = compute_ratio(image_array(:,:,:,i), image_0_filtered, ...
             'shift',0);
-    end;
+    end
     %clear image_array;
-    for i = 1:num_images,
+    for i = 1:num_images
         con(:,:,1,i) = region_wiener2(con(:,:,1,i),nhood,bw);
-    end;
+    end
 
     % take median in time dimension
     num_steps = floor(num_images/num_images_per_layer);
     display(num_steps);
-    if num_steps <2,
+    if num_steps <2
         error('num_steps must be no less then 2');
-    end;
+    end
     size_image= size(con);
     med_con = zeros([size_image(1:3),num_steps]);
-    for i = 1:num_steps,
+    for i = 1:num_steps
         the_start = (i-1)*num_images_per_layer+1;
         the_end = i*num_images_per_layer;
         med_con(:,:,:,i) = median(con(:,:,:,the_start:the_end),dimension);
-    end;
+    end
 
-    if save_results,
+    if save_results
         file_name = sprintf('%sresults_%d.mat',path,starting_step);
         save(file_name, 'image_0_filtered', 'image_array','med_con','con');
-    end;
+    end
 return;
 
 

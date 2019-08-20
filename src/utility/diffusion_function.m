@@ -13,4 +13,5 @@ function draw_surface_with_mesh(surf, mesh)
     view(2); axis ij; colormap jet; 
     set(gca, 'FontSize', 12, 'FontWeight','bold',...
              'Box', 'off', 'LineWidth', 1.5);
+    colorbar; 
 return

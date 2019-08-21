@@ -100,7 +100,8 @@ function data = init_diffusion_map(cell_name, data, varargin)
               for j = 1 : num_cols
 %                diffusion_map(i, j) = cell_bw(i,j) * sqrt((i - num_rows/2)^2 + (j - num_cols/2)^2);
                diffusion_map(i, j) = cell_bw(i,j) * sqrt((i - 175)^2 + (j - 375)^2);
-%                % Use sigmoid function
+%                diffusion_map(i, j) = cell_bw(i,j) * sqrt((i - 250)^2 + (j - 400)^2);
+%                % Use sigmoid function: Changing too fast, not used. 
 %                xx = ((i-175)^2 + (j-375)^2)/100; 
 %                sigmoid = 100 * (1-1/(1 + exp(100 - 4 * xx))); 
 %                diffusion_map(i, j) = cell_bw(i, j) * sigmoid; 

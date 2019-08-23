@@ -54,8 +54,8 @@ function data = simulation_get_diffusion_vector(cell_name, data, tri4)
         elseif strcmp(cell_name, 'tensor_cross_2')
             num_tris = size(tri4, 2);
             diff_coef = zeros(num_tris, 3);
-            D = {[reshape(data.D{1}, 4, 1)]; ...
-                 [reshape(data.D{2}, 4, 1)]};
+            D = {reshape(data.D{1}, 4, 1); ...
+                 reshape(data.D{2}, 4, 1)};
             cartesian_diff_const = {[data.diff_const(1), 0, data.diff_const(1)];...
                                     [D{1}(1), D{1}(2), D{1}(4)];...
                                     [D{2}(1), D{2}(2), D{2}(4)];...
@@ -83,24 +83,13 @@ function data = simulation_get_diffusion_vector(cell_name, data, tri4)
 
                
         elseif strcmp(cell_name, 'general_diffusion') % need to test 'layered_diffusion'
-            diff_coef = concentration_to_vector(data.diff_map(:,:,1),[tc(2,:); tc(1,:)],...
+            % diff_coef in the triangular format 
+            diff_coef = concentration_to_vector(data.diff_map,[tc(2,:); tc(1,:)],...
                                                 'method',1,'interp','nearest');
-            diff_tag = zeros(size(diff_coef)); 
-%             num_diff_const = length(data.diff_const);
-%             diff_tag = zeros(num_diff_const,1);
-%             tagged = logical(size(diff_tag));
-% 
-%             for i = 1:num_diff_const
-%                 temp = (diff_coef == data.diff_const(i));
-%                 diff_tag(temp) = i;
-%                 tagged(temp) = true;
-%                 clear temp;
-%             end
-%             % assign non-tagged triangles to region 1 
-%             % 1 - the outside region for layered diffusion
-%             diff_tag(~tagged) = 1; 
-%             % spot diffusion: diff_tag =1 - in the spots; 2 - in the cell
-%             % layered diffusion: diff_tag = i - in layer i, 1<= i <= 4.
+            num_diff_const = length(diff_coef);
+            diff_tag = (1:num_diff_const)';
+            p = data.p_image'; 
+            data.diff_coef_node = concentration_to_vector(data.diff_map, [p(:, 2), p(:, 1)]);
         else
             fprintf('\nFunction simulation_get_diffusion_vector(): incorrect cell_name! --- \n\n');
         end % if strcmp(cell_name, 'layered_diffusion'),

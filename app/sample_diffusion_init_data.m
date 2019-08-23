@@ -6,7 +6,7 @@ function data = sample_diffusion_init_data(cell_name)
     % root = 'D:/sof/data/diffusion_sample/';
     % root = '/Users/Yiwen/Desktop/for_yiwen/diffusion_data/diffusion/';
     root = '/Users/kathylu/Documents/sof/data/diffusion_sample/';
-    data.cell_name = cell_name;
+    data.cell_name = cell_name; 
     switch cell_name
         case 'test'
             data.path = strcat(root,'simulation/test/');
@@ -18,7 +18,7 @@ function data = sample_diffusion_init_data(cell_name)
             temp = imread(strcat(data.path,'cell_after_photobleach.PNG'));
             data.image_0 = imcrop(temp, data.rectangle); clear temp;
             data.num_bits = 8;
-            data.mag = 100; %magnification
+            data.mag = 100; % magnification
             % dt is not needed for computer simulation,
             % but it is needed for compute recovery curve and
             % estimate the diffusion coefficient from the simulation
@@ -89,7 +89,7 @@ function data = sample_diffusion_init_data(cell_name)
             data.path = strcat(root,'simulation/general_diffusion/');
             % The diffusion map is calculated in src/sim/init_diffusion_map.m for the same case name.
             % Why are these diffusion coefficients needed? 
-            data.diff_const = [0 0 0 0]; % place holder, value not needed 
+            data.diff_const = [];  
             data.first_file = 'cell_after_photobleach.PNG';
             image_before = imread(strcat(data.path, 'cell_before_photobleach.PNG'));
             rectangle_file = strcat(data.path, 'image_rectangle.data');

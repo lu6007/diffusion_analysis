@@ -139,8 +139,10 @@ function data = computer_simulation(data, varargin)
     title('Initial Concentration before Smoothing');
 
     % Calculate the diffusion vector
+    data.p_image = p_image; 
     data.tri_centroid = (p_image(:,tri(1,:)) + p_image(:,tri(2,:)) + p_image(:,tri(3,:))) / 3.0;
-    data = simulation_get_diffusion_vector(cell_name, data, tri(4,:));
+    data = simulation_get_diffusion_vector(cell_name, data, tri(4,:)); 
+    % size(data.diff_coef_node) = 637x 1
     diff_coef = data.diff_coef;
     diff_tag  = data.diff_tag;
 

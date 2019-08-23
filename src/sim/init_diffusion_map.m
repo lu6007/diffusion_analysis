@@ -92,6 +92,10 @@ function data = init_diffusion_map(cell_name, data, varargin)
             boundary = data.boundary{1}; 
             [num_row, num_col, ~] = size(data.image_0);
             cell_bw = poly2mask(boundary(:,1), boundary(:,2), num_row, num_col);
+            % dilate cell_bw to avoid the problems at boundary
+            se = strel('square', 3);
+            temp = cell_bw; clear cell_bw;
+            cell_bw = imdilate(temp, se); clear temp; 
             % The diffusion map is a function of the spatial variables i
             % and j. 
             diffusion_map = zeros(num_row, num_col);
@@ -182,7 +186,10 @@ function data = init_diffusion_map(cell_name, data, varargin)
             % Gray part : diff_coef = [D11; D12; D22].
             diffusion_map = zeros(num_row, num_col,3);
             se = strel('square',3);
-            tag_matrix = imdilate((max(abs(double(im_spot(:,:,:)) -255), [],3)<=30),se); %dilate the white part
+            % dilate the white part
+            temp = max(abs(double(im_spot(:,:,:)) -255),[], 3); 
+            tag_matrix = imdilate(temp<=30, se); 
+            clear temp; 
 
             % diffusion map for background
             diffusion_map(:,:,1)= tag_matrix * diff_const(1);

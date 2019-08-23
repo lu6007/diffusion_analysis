@@ -142,7 +142,6 @@ function data = computer_simulation(data, varargin)
     data.p_image = p_image; 
     data.tri_centroid = (p_image(:,tri(1,:)) + p_image(:,tri(2,:)) + p_image(:,tri(3,:))) / 3.0;
     data = simulation_get_diffusion_vector(cell_name, data, tri(4,:)); 
-    % size(data.diff_coef_node) = 637x 1
     diff_coef = data.diff_coef;
     diff_tag  = data.diff_tag;
 
@@ -158,6 +157,12 @@ function data = computer_simulation(data, varargin)
         figure; % 6
         dfun.draw_surface(surf, 'mesh', new_mesh); 
         title('Diffusion Coefficients Overlaid with Refined Mesh');
+    end
+    if isfield(data, 'diff_coef_node')
+        surf.u = data.diff_coef_node;
+        figure; 
+        dfun.draw_surface(surf, 'mesh', mesh);
+        title('Nodal Diffusion Coeffcients Overlaid with Mesh');
     end
     clear mesh; 
 

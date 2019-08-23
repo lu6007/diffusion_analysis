@@ -3,9 +3,10 @@
 %     fh.adjust_time_step = @adjust_time_step; 
 %
 % function draw_surface(surf, varargin)
-%     para_name = {'with_mesh', 'mesh'};
-%     default = {0, []};
-% Surface and mesh takes the default row vector format. 
+%     para_name = {'mesh'};
+%     default = {[]};
+% Surface takes column vectors as node data and row vectors as triangular
+% data. Mesh takes the default row vector format. 
 %
 % function [G, time_stepping] = ...
 %    adjust_time_stepping(diff_const,dt,u_0,M,K)
